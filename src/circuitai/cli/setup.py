@@ -26,7 +26,7 @@ def setup_cmd(ctx: CircuitContext) -> None:
     console.print(
         Panel(
             "[bold cyan]Welcome to CircuitAI![/bold cyan]\n\n"
-            "Local-first, privacy-focused personal finance CLI.\n"
+            "Your personal command center — local-first, privacy-focused.\n"
             "All your data stays on this machine in an encrypted database.",
             border_style="cyan",
         )

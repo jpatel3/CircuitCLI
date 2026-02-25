@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/jpatel3/CircuitCLI/actions/workflows/ci.yml/badge.svg)](https://github.com/jpatel3/CircuitCLI/actions)
 
-**Local-first, privacy-focused personal finance and productivity CLI.**
+**Your Personal Command Center — local-first, privacy-focused.**
 
 All data stays on your machine in an encrypted SQLite database. Agent-native design with `--json` mode for AI agents and a rich terminal experience for humans.
 

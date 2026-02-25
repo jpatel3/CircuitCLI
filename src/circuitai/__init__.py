@@ -1,3 +1,3 @@
-"""CircuitAI — Local-first, privacy-focused personal finance CLI."""
+"""CircuitAI — Your Personal Command Center."""
 
 __version__ = "0.1.0"

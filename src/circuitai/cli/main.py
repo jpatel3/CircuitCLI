@@ -80,7 +80,7 @@ class JsonGroup(click.Group):
 @click.version_option(__version__, prog_name="CircuitAI")
 @click.pass_context
 def cli(ctx: click.Context, json_mode: bool) -> None:
-    """CircuitAI — Local-first, privacy-focused personal finance CLI.
+    """CircuitAI — Your Personal Command Center.
 
     Run without a subcommand to launch the interactive REPL.
     """

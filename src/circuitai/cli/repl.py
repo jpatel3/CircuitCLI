@@ -392,7 +392,7 @@ def launch_repl(ctx: CircuitContext) -> None:
     console.print()
     console.print(
         Panel(
-            "[bold cyan]CircuitAI[/bold cyan] — Personal Finance CLI\n"
+            "[bold cyan]CircuitAI[/bold cyan] — Your Personal Command Center\n"
             "Type naturally or use /commands. Type [bold]/help[/bold] for help.",
             border_style="cyan",
         )

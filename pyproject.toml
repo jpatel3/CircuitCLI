@@ -5,12 +5,12 @@ build-backend = "hatchling.build"
 [project]
 name = "circuitai"
 version = "0.1.0"
-description = "Local-first, privacy-focused personal finance and productivity CLI"
+description = "Local-first, privacy-focused personal command center"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 authors = [{ name = "CircuitAI Contributors" }]
-keywords = ["finance", "cli", "privacy", "encrypted", "personal-finance"]
+keywords = ["finance", "cli", "privacy", "encrypted", "personal-ai", "dashboard"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
