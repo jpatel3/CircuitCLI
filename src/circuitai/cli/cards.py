@@ -59,8 +59,8 @@ def cards_list(ctx: CircuitContext) -> None:
 
 
 @cards.command("add")
-@click.option("--name", required=True, help="Card name.")
-@click.option("--institution", required=True, help="Card issuer.")
+@click.option("--name", prompt="Card name", required=True, help="Card name.")
+@click.option("--institution", prompt="Card issuer", required=True, help="Card issuer.")
 @click.option("--last-four", default="", help="Last 4 digits.")
 @click.option("--limit", "credit_limit", type=float, default=0, help="Credit limit in dollars.")
 @click.option("--balance", type=float, default=0, help="Current balance in dollars.")

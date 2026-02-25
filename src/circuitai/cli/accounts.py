@@ -53,8 +53,8 @@ def accounts_list(ctx: CircuitContext) -> None:
 
 
 @accounts.command("add")
-@click.option("--name", required=True, help="Account name.")
-@click.option("--institution", required=True, help="Bank name.")
+@click.option("--name", prompt="Account name", required=True, help="Account name.")
+@click.option("--institution", prompt="Bank name", required=True, help="Bank name.")
 @click.option("--type", "account_type", default="checking", help="Account type: checking, savings, money_market.")
 @click.option("--last-four", default="", help="Last 4 digits of account number.")
 @click.option("--balance", type=float, default=0, help="Current balance in dollars.")
