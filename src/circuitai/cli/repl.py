@@ -298,6 +298,30 @@ def _route_natural_text(ctx: CircuitContext, text: str) -> None:
     )
 
 
+def _pick_account(db) -> str | None:
+    """Show numbered account/card list and return selected ID, or None if cancelled."""
+    accounts = db.fetchall("SELECT id, name, institution FROM accounts WHERE is_active = 1")
+    cards = db.fetchall("SELECT id, name, institution FROM cards WHERE is_active = 1")
+
+    if not accounts and not cards:
+        return None
+
+    choices: list[tuple[str, str]] = []
+    for a in accounts:
+        choices.append((a["id"], f"[cyan]acct[/cyan] {a['name']} ({a['institution']})"))
+    for c in cards:
+        choices.append((c["id"], f"[yellow]card[/yellow] {c['name']} ({c['institution']})"))
+
+    console.print("\n[bold]Select an account:[/bold]")
+    for i, (_, label) in enumerate(choices, 1):
+        console.print(f"  {i}. {label}")
+
+    selection = click.prompt("Number", type=int) - 1
+    if selection < 0 or selection >= len(choices):
+        return None
+    return choices[selection][0]
+
+
 def _handle_file_import(ctx: CircuitContext, file_path: str) -> None:
     """Handle a detected file drop — prompt user and route to the appropriate importer."""
     from circuitai.services.file_import_service import get_file_type, import_file
@@ -313,7 +337,10 @@ def _handle_file_import(ctx: CircuitContext, file_path: str) -> None:
         db = ctx.get_db()
 
         if file_type == "csv":
-            account_id = click.prompt("Account ID to import into")
+            account_id = _pick_account(db)
+            if not account_id:
+                ctx.formatter.error("No accounts found. Add one first with '/accounts add'.")
+                return
             result = import_file(db, file_path, account_id)
             ctx.formatter.success(
                 f"Imported {result['imported']} transactions, linked {result.get('linked', 0)}."
@@ -330,7 +357,10 @@ def _handle_file_import(ctx: CircuitContext, file_path: str) -> None:
             )
 
             if mode == "transactions":
-                account_id = click.prompt("Account ID to import into")
+                account_id = _pick_account(db)
+                if not account_id:
+                    ctx.formatter.error("No accounts found. Add one first with '/accounts add'.")
+                    return
                 result = import_file(db, file_path, account_id, mode=mode)
                 ctx.formatter.success(f"Imported {result['imported']} transactions.")
                 if result.get("errors"):
