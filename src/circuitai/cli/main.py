@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import sys
-from typing import Any
 
 import click
 
@@ -24,7 +22,6 @@ class CircuitContext:
         """Lazy-load and return the database connection."""
         if self._db is None:
             from circuitai.core.database import DatabaseConnection
-            from circuitai.core.config import get_data_dir
 
             self._db = DatabaseConnection(encryption_key=self._key)
             self._db.connect()
@@ -142,3 +139,6 @@ cli.add_command(calendar)
 
 from circuitai.cli.export import export
 cli.add_command(export)
+
+from circuitai.cli.seed import seed_cmd
+cli.add_command(seed_cmd, "seed")
