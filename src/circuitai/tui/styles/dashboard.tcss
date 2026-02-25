@@ -1,0 +1,27 @@
+/* CircuitAI Dashboard Styles */
+
+Screen {
+    layout: grid;
+    grid-size: 2 4;
+    grid-gutter: 1;
+    padding: 1;
+}
+
+.panel {
+    border: solid $primary;
+    padding: 1;
+    height: auto;
+    min-height: 8;
+}
+
+#summary-panel {
+    column-span: 2;
+}
+
+Header {
+    dock: top;
+}
+
+Footer {
+    dock: bottom;
+}
