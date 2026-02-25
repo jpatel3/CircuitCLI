@@ -350,11 +350,11 @@ def _handle_file_import(ctx: CircuitContext, file_path: str) -> None:
                     ctx.formatter.warning(f"  {err}")
 
         elif file_type == "pdf":
-            mode = click.prompt(
-                "Mode",
-                type=click.Choice(["transactions", "bill-info"]),
-                default="bill-info",
-            )
+            console.print("\n[bold]Import mode:[/bold]")
+            console.print("  1. [cyan]transactions[/cyan] — Import transaction rows")
+            console.print("  2. [cyan]bill-info[/cyan] — Extract amount due & due date")
+            mode_choice = click.prompt("Number", type=int, default=2)
+            mode = "transactions" if mode_choice == 1 else "bill-info"
 
             if mode == "transactions":
                 account_id = _pick_account(db)
