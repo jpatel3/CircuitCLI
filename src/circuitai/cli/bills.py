@@ -282,3 +282,87 @@ def bills_summary(ctx: CircuitContext) -> None:
     ctx.formatter.print(f"  Yearly total: {dollars(summary['yearly_total_cents'])}")
     ctx.formatter.print(f"  Estimated monthly (all): {dollars(summary['estimated_monthly_cents'])}")
     ctx.formatter.print(f"  Due this week: {summary['due_soon']}")
+
+
+@bills.command("link")
+@click.option("--account", "account_id", default=None, help="Limit to a specific account ID.")
+@click.option("--tolerance", type=float, default=5.0, help="Amount tolerance in dollars.")
+@click.option("--days", "date_window", type=int, default=7, help="Date proximity window in days.")
+@pass_context
+def bills_link(
+    ctx: CircuitContext, account_id: str | None, tolerance: float, date_window: int
+) -> None:
+    """Auto-match transactions to bills (statement linking)."""
+    from circuitai.services.statement_linker import StatementLinker
+
+    db = ctx.get_db()
+    linker = StatementLinker(
+        db,
+        amount_tolerance_cents=int(tolerance * 100),
+        date_window_days=date_window,
+    )
+    result = linker.link_transactions(account_id=account_id)
+
+    if ctx.json_mode:
+        ctx.formatter.json(result)
+        return
+
+    if result["matched"] == 0:
+        ctx.formatter.info(f"No new matches found ({result['total_unmatched']} unmatched transactions).")
+    else:
+        ctx.formatter.success(f"Matched {result['matched']} of {result['total_unmatched']} transactions.")
+        for m in result["matches"]:
+            ctx.formatter.print(f"  {m['description']} → bill {m['bill_id'][:8]}… (score: {m['score']:.2f})")
+
+
+@bills.command("unmatched")
+@click.option("--account", "account_id", default=None, help="Limit to a specific account ID.")
+@pass_context
+def bills_unmatched(ctx: CircuitContext, account_id: str | None) -> None:
+    """Show unmatched transactions for review."""
+    from circuitai.services.statement_linker import StatementLinker
+
+    db = ctx.get_db()
+    linker = StatementLinker(db)
+    unmatched = linker.get_unmatched(account_id=account_id)
+
+    if ctx.json_mode:
+        ctx.formatter.json(unmatched)
+        return
+
+    if not unmatched:
+        ctx.formatter.info("No unmatched transactions.")
+        return
+
+    rows = []
+    for t in unmatched:
+        rows.append([
+            t["transaction_date"],
+            t["description"],
+            dollars(abs(t["amount_cents"])),
+            t["id"][:8] + "…",
+        ])
+
+    ctx.formatter.table(
+        title="Unmatched Transactions",
+        columns=[("Date", ""), ("Description", "bold"), ("Amount", "green"), ("ID", "dim")],
+        rows=rows,
+    )
+
+
+@bills.command("confirm-match")
+@click.argument("transaction_id")
+@click.argument("bill_id")
+@pass_context
+def bills_confirm_match(ctx: CircuitContext, transaction_id: str, bill_id: str) -> None:
+    """Manually confirm a transaction-to-bill match (teaches the system)."""
+    from circuitai.services.statement_linker import StatementLinker
+
+    db = ctx.get_db()
+    linker = StatementLinker(db)
+    linker.confirm_match(transaction_id, bill_id)
+
+    if ctx.json_mode:
+        ctx.formatter.json({"confirmed": True, "transaction_id": transaction_id, "bill_id": bill_id})
+    else:
+        ctx.formatter.success("Confirmed match and learned pattern.")
