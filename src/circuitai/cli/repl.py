@@ -421,13 +421,14 @@ def launch_repl(ctx: CircuitContext) -> None:
     # Set up prompt session with completion and history
     completer = CircuitCompleter(SLASH_COMMAND_META, SUBCOMMAND_META)
     history = FileHistory(str(get_history_path()))
+    from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
     from prompt_toolkit.completion import ThreadedCompleter
 
     session: PromptSession[str] = PromptSession(
         completer=ThreadedCompleter(completer),
         history=history,
-        enable_history_search=True,
         complete_while_typing=True,
+        auto_suggest=AutoSuggestFromHistory(),
     )
 
     while True:
