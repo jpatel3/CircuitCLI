@@ -1,5 +1,7 @@
 # CircuitAI
 
+[![CI](https://github.com/jpatel3/CircuitCLI/actions/workflows/ci.yml/badge.svg)](https://github.com/jpatel3/CircuitCLI/actions)
+
 **Local-first, privacy-focused personal finance and productivity CLI.**
 
 All data stays on your machine in an encrypted SQLite database. Agent-native design with `--json` mode for AI agents and a rich terminal experience for humans.
@@ -32,13 +34,13 @@ circuit --help
 - **Deadlines** — priority-based deadline management with calendar sync
 - **Kids Activities** — per-child, per-sport cost and schedule tracking
 - **Natural Language Input** — `circuit add "paid electric bill $142"` parses and records
-- **Natural Language Queries** — `circuit query "what bills are due this week?"`
+- **Natural Language Queries** — `circuit query "what bills are due this week?"`, `"show my account balances"`, `"what's my net worth?"`
 - **Textual Dashboard** — full TUI with `circuit dashboard`
 - **CalDAV Calendar Sync** — two-way sync with Apple Calendar, Google Calendar, etc.
 - **Plugin System** — extensible via Python entry-point adapters
 - **CSV Import** — import bank/card statements from CSV files
 - **Export** — CSV and JSON export for all data types
-- **Undo** — revert the last destructive operation
+- **Undo** — revert the last destructive operation (supports add, pay, complete, delete, and update across all entity types: bills, accounts, cards, deadlines, activities, investments, mortgages)
 - **Agent-Native** — every command supports `--json` for AI agent consumption
 
 ## Command Reference
@@ -84,7 +86,32 @@ circuit> /undo
 circuit> /quit
 ```
 
-Tab completion and persistent history are built in.
+### Slash Commands
+
+All 18 slash commands: `/bills`, `/accounts`, `/cards`, `/mortgage`, `/investments`, `/deadlines`, `/activities`, `/morning`, `/dashboard`, `/calendar`, `/adapters`, `/export`, `/sync`, `/settings`, `/help`, `/undo`, `/query`, `/quit`
+
+### Natural Language
+
+The REPL detects natural language automatically:
+- **Questions** — `what bills are due this week?`, `show my account balances`, `what's my net worth?`
+- **Actions** — keywords like `paid`, `add`, and `complete` are recognized with confidence scoring
+- **Fallback** — unrecognized input is passed to the query engine
+
+Word completion and persistent history file are built in.
+
+## TUI Dashboard
+
+Launch with `circuit dashboard` or `/dashboard` in the REPL.
+
+The dashboard displays 7 panels: financial summary, bills, accounts, cards, deadlines, investments, and activities. Click or press Enter on any panel to drill down into a detail screen.
+
+**Keyboard shortcuts:**
+
+| Key | Action |
+|-----|--------|
+| `q` / `Escape` | Quit |
+| `r` | Refresh |
+| `Tab` / `Shift+Tab` | Navigate between panels |
 
 ## Morning Catchup
 
@@ -93,10 +120,33 @@ circuit morning
 ```
 
 Shows a daily briefing with:
-- Bills due soon (next 7 days)
-- Upcoming deadlines
-- Today's activity schedule
-- Account balance summary
+- **Attention items** sorted by urgency — overdue deadlines, bills due today, upcoming deadlines
+- **Bills due** in the next 7 days (smart filtering skips recently-paid bills within 25 days)
+- **Today's activity schedule**
+- **Accounts and cards snapshot** — balances and utilization
+
+## Seed Data
+
+Load demo data for testing or exploration:
+
+```bash
+circuit seed --profile demo      # full demo dataset
+circuit seed --profile minimal   # minimal starter data
+```
+
+The `demo` profile populates: 4 bank accounts, 3 credit cards, 10 bills, 1 mortgage, 6 investments, 2 children, 4 activities, and 2 deadlines.
+
+## Export
+
+Export your data to CSV or JSON:
+
+```bash
+circuit export csv --entity bills
+circuit export json --entity all
+circuit export csv --entity accounts -o accounts.csv
+```
+
+Supported entity types: `bills`, `accounts`, `cards`, `investments`, `deadlines`, `activities` (plus `all` for JSON export). Use `-o <file>` to write to a file instead of stdout.
 
 ## JSON / Agent-Native Mode
 
@@ -184,6 +234,15 @@ Without SQLCipher installed, CircuitAI falls back to plain SQLite (still local-o
 - **prompt_toolkit** — REPL with history and completion
 - **SQLite / SQLCipher** — local encrypted storage
 - **CalDAV** — optional calendar sync
+
+## Testing & CI
+
+```bash
+python -m pytest               # run all tests
+python -m pytest -x            # stop on first failure
+```
+
+102 tests across 10 test files covering CLI commands, services, repositories, and adapters. GitHub Actions CI runs on Python 3.11 and 3.12 with Ruff linting, pytest, and build verification.
 
 ## Contributing
 
