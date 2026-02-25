@@ -69,12 +69,25 @@ def setup_cmd(ctx: CircuitContext) -> None:
     try:
         version = initialize_database(db)
         fmt.success(f"Database schema initialized (v{version}).")
+
+        # Step 4: Mark first_run = False
+        update_config(general={"first_run": False})
+        fmt.success("Configuration saved.")
+
+        # Step 4.5: Optional Anthropic API key for screen capture
+        console.print()
+        console.print("[dim]Optional: Configure screen capture for bank website screenshots.[/dim]")
+        api_key = click.prompt(
+            "Anthropic API key (Enter to skip)", default="", hide_input=True, show_default=False
+        )
+        if api_key.strip():
+            from circuitai.services.capture_service import CaptureService
+            CaptureService(db).save_api_key(api_key.strip())
+            fmt.success("Anthropic API key saved.")
+        else:
+            fmt.info("Skipped. You can configure later with 'circuit capture setup'.")
     finally:
         db.close()
-
-    # Step 4: Mark first_run = False
-    update_config(general={"first_run": False})
-    fmt.success("Configuration saved.")
 
     console.print()
     console.print(
@@ -84,6 +97,7 @@ def setup_cmd(ctx: CircuitContext) -> None:
             "  • [cyan]circuit[/cyan] — Launch interactive REPL\n"
             "  • [cyan]circuit bills add[/cyan] — Add your first bill\n"
             "  • [cyan]circuit accounts add[/cyan] — Add a bank account\n"
+            "  • [cyan]circuit capture snap[/cyan] — Screenshot a bank page\n"
             "  • [cyan]circuit --help[/cyan] — See all commands",
             border_style="green",
         )

@@ -36,8 +36,9 @@ crypto = ["sqlcipher3-binary>=0.5"]
 calendar = ["caldav>=1.3"]
 pdf = ["pdfplumber>=0.9"]
 plaid = ["plaid-python>=29.0"]
+capture = ["anthropic>=0.40"]
 dev = ["ruff", "mypy", "pytest", "pytest-cov"]
-all = ["circuitai[crypto,calendar,pdf,plaid,dev]"]
+all = ["circuitai[crypto,calendar,pdf,plaid,capture,dev]"]
 
 [project.scripts]
 circuit = "circuitai.cli.main:cli"

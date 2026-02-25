@@ -5,7 +5,7 @@ from __future__ import annotations
 from circuitai.core.database import DatabaseConnection
 from circuitai.core.exceptions import DatabaseError
 
-CURRENT_SCHEMA_VERSION = 2
+CURRENT_SCHEMA_VERSION = 3
 
 MIGRATIONS: dict[int, str | list[str]] = {
     1: """
@@ -294,6 +294,16 @@ MIGRATIONS: dict[int, str | list[str]] = {
         """CREATE UNIQUE INDEX IF NOT EXISTS idx_card_txn_plaid
            ON card_transactions(plaid_txn_id) WHERE plaid_txn_id IS NOT NULL""",
         "INSERT INTO schema_version (version) VALUES (2)",
+    ],
+    3: [
+        # Add fingerprint column for cross-source dedup
+        "ALTER TABLE account_transactions ADD COLUMN txn_fingerprint TEXT",
+        """CREATE UNIQUE INDEX IF NOT EXISTS idx_acct_txn_fingerprint
+           ON account_transactions(txn_fingerprint) WHERE txn_fingerprint IS NOT NULL""",
+        "ALTER TABLE card_transactions ADD COLUMN txn_fingerprint TEXT",
+        """CREATE UNIQUE INDEX IF NOT EXISTS idx_card_txn_fingerprint
+           ON card_transactions(txn_fingerprint) WHERE txn_fingerprint IS NOT NULL""",
+        "INSERT INTO schema_version (version) VALUES (3)",
     ],
 }
 

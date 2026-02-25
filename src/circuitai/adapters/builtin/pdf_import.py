@@ -126,12 +126,23 @@ class PdfImportAdapter(BaseAdapter):
                                 amount_cents = int(float(amount_str) * 100)
 
                                 from circuitai.models.base import new_id, now_iso
+                                from circuitai.services.capture_service import compute_txn_fingerprint
+
+                                fingerprint = compute_txn_fingerprint(txn_date, description, amount_cents)
+
+                                # Dedup: skip if fingerprint already exists
+                                existing = db.fetchone(
+                                    "SELECT id FROM account_transactions WHERE txn_fingerprint = ?",
+                                    (fingerprint,),
+                                )
+                                if existing:
+                                    continue
 
                                 db.execute(
                                     """INSERT INTO account_transactions
-                                       (id, account_id, description, amount_cents, transaction_date, created_at)
-                                       VALUES (?, ?, ?, ?, ?, ?)""",
-                                    (new_id(), self._account_id, description, amount_cents, txn_date, now_iso()),
+                                       (id, account_id, description, amount_cents, transaction_date, txn_fingerprint, created_at)
+                                       VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                                    (new_id(), self._account_id, description, amount_cents, txn_date, fingerprint, now_iso()),
                                 )
                                 imported += 1
                             except Exception as e:

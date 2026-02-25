@@ -33,6 +33,7 @@ SLASH_COMMAND_META: dict[str, str] = {
     "/calendar": "Calendar sync",
     "/adapters": "Adapter management",
     "/plaid": "Plaid bank sync",
+    "/capture": "Screen capture import",
     "/export": "Export data",
     "/sync": "Sync adapters",
     "/settings": "App settings",
@@ -119,6 +120,11 @@ SUBCOMMAND_META: dict[str, dict[str, str]] = {
         "sync": "Sync transactions & balances",
         "status": "Show connected banks",
         "identity": "Fetch account holder info",
+    },
+    "capture": {
+        "setup": "Configure API key",
+        "snap": "Screenshot & import",
+        "status": "Show capture status",
     },
     "export": {
         "csv": "Export as CSV",

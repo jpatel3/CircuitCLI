@@ -425,6 +425,7 @@ class TestPlaidMigration:
         card_cols = [r["name"] for r in db.execute("PRAGMA table_info(card_transactions)").fetchall()]
         assert "plaid_txn_id" in card_cols
 
-    def test_schema_version_is_2(self, db):
+    def test_schema_version_is_current(self, db):
+        from circuitai.core.migrations import CURRENT_SCHEMA_VERSION
         row = db.fetchone("SELECT MAX(version) as v FROM schema_version")
-        assert row["v"] == 2
+        assert row["v"] == CURRENT_SCHEMA_VERSION
