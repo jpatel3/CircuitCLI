@@ -223,11 +223,16 @@ def _route_slash_command(ctx: CircuitContext, command: str) -> None:
     # Build args list
     args = shlex.split(rest) if rest else []
     if isinstance(click_cmd, click.Group) and not args:
-        # Use "list" as default, fall back to "status" for groups that don't have "list"
+        # Pick a sensible default subcommand
         if "list" in click_cmd.commands:
             args = ["list"]
         elif "status" in click_cmd.commands:
             args = ["status"]
+        elif not getattr(click_cmd, "invoke_without_command", False):
+            # No safe default — show available subcommands
+            subs = ", ".join(sorted(click_cmd.commands.keys()))
+            ctx.formatter.info(f"Available subcommands: {subs}")
+            return
 
     try:
         # Create a new Click context and invoke
