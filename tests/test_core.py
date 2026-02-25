@@ -94,8 +94,9 @@ class TestDatabase:
 
 class TestMigrations:
     def test_initialize_creates_tables(self, db):
+        from circuitai.core.migrations import CURRENT_SCHEMA_VERSION
         version = get_schema_version(db)
-        assert version == 1
+        assert version == CURRENT_SCHEMA_VERSION
 
         # Check that core tables exist
         tables = db.fetchall(

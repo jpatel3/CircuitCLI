@@ -32,6 +32,7 @@ SLASH_COMMAND_META: dict[str, str] = {
     "/dashboard": "Launch TUI dashboard",
     "/calendar": "Calendar sync",
     "/adapters": "Adapter management",
+    "/plaid": "Plaid bank sync",
     "/export": "Export data",
     "/sync": "Sync adapters",
     "/settings": "App settings",
@@ -111,6 +112,13 @@ SUBCOMMAND_META: dict[str, dict[str, str]] = {
         "setup": "Configure CalDAV connection",
         "sync": "Trigger calendar sync",
         "status": "Show sync status",
+    },
+    "plaid": {
+        "setup": "Configure Plaid credentials",
+        "link": "Connect a bank account",
+        "sync": "Sync transactions & balances",
+        "status": "Show connected banks",
+        "identity": "Fetch account holder info",
     },
     "export": {
         "csv": "Export as CSV",

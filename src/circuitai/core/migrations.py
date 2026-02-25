@@ -5,9 +5,9 @@ from __future__ import annotations
 from circuitai.core.database import DatabaseConnection
 from circuitai.core.exceptions import DatabaseError
 
-CURRENT_SCHEMA_VERSION = 1
+CURRENT_SCHEMA_VERSION = 2
 
-MIGRATIONS: dict[int, str] = {
+MIGRATIONS: dict[int, str | list[str]] = {
     1: """
     -- Schema version tracking
     CREATE TABLE IF NOT EXISTS schema_version (
@@ -273,6 +273,28 @@ MIGRATIONS: dict[int, str] = {
 
     INSERT INTO schema_version (version) VALUES (1);
     """,
+    2: [
+        # Plaid account mapping table
+        """CREATE TABLE IF NOT EXISTS plaid_account_map (
+            id TEXT PRIMARY KEY,
+            plaid_account_id TEXT NOT NULL UNIQUE,
+            entity_type TEXT NOT NULL,
+            entity_id TEXT NOT NULL,
+            institution TEXT NOT NULL DEFAULT '',
+            plaid_name TEXT NOT NULL DEFAULT '',
+            plaid_mask TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )""",
+        # Add plaid_txn_id to account_transactions
+        "ALTER TABLE account_transactions ADD COLUMN plaid_txn_id TEXT",
+        """CREATE UNIQUE INDEX IF NOT EXISTS idx_acct_txn_plaid
+           ON account_transactions(plaid_txn_id) WHERE plaid_txn_id IS NOT NULL""",
+        # Add plaid_txn_id to card_transactions
+        "ALTER TABLE card_transactions ADD COLUMN plaid_txn_id TEXT",
+        """CREATE UNIQUE INDEX IF NOT EXISTS idx_card_txn_plaid
+           ON card_transactions(plaid_txn_id) WHERE plaid_txn_id IS NOT NULL""",
+        "INSERT INTO schema_version (version) VALUES (2)",
+    ],
 }
 
 
@@ -292,8 +314,14 @@ def run_migrations(db: DatabaseConnection) -> int:
     for version in sorted(MIGRATIONS.keys()):
         if version > current:
             try:
-                db.conn.executescript(MIGRATIONS[version])
-                db.commit()
+                migration = MIGRATIONS[version]
+                if isinstance(migration, list):
+                    for stmt in migration:
+                        db.execute(stmt)
+                    db.commit()
+                else:
+                    db.conn.executescript(migration)
+                    db.commit()
                 current = version
             except Exception as e:
                 raise DatabaseError(f"Migration to v{version} failed: {e}") from e

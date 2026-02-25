@@ -145,3 +145,6 @@ cli.add_command(seed_cmd, "seed")
 
 from circuitai.cli.integrations_cmd import integrations
 cli.add_command(integrations)
+
+from circuitai.cli.plaid_cmd import plaid_cmd
+cli.add_command(plaid_cmd, "plaid")
