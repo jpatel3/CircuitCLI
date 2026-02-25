@@ -14,6 +14,7 @@ from rich.panel import Panel
 from circuitai.cli.main import CircuitContext
 from circuitai.core.config import get_history_path, load_config
 from circuitai.core.encryption import MasterKeyManager
+from circuitai.services.undo_service import UndoService
 
 console = Console()
 
@@ -89,6 +90,15 @@ def _route_slash_command(ctx: CircuitContext, command: str) -> None:
 
     if cmd_name == "help":
         _show_help()
+        return
+
+    if cmd_name == "undo":
+        undo_svc = getattr(ctx, "_undo_svc", None)
+        if undo_svc and undo_svc.has_undo:
+            result = undo_svc.undo()
+            ctx.formatter.success(result)
+        else:
+            ctx.formatter.info("Nothing to undo.")
         return
 
     if cmd_name == "morning":
@@ -196,6 +206,9 @@ def launch_repl(ctx: CircuitContext) -> None:
         ctx.formatter.error(f"Database error: {e}")
         return
 
+    # Attach undo service
+    ctx._undo_svc = UndoService(db)
+
     ctx.formatter.success("Database unlocked. Ready!")
     console.print()
 
@@ -218,6 +231,8 @@ def launch_repl(ctx: CircuitContext) -> None:
                 _route_slash_command(ctx, text)
             elif text.lower() in ("morning", "catchup"):
                 _route_slash_command(ctx, "/morning")
+            elif text.lower() == "undo":
+                _route_slash_command(ctx, "/undo")
             else:
                 _route_natural_text(ctx, text)
 
