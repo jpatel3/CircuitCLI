@@ -4,15 +4,41 @@ from __future__ import annotations
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Horizontal, Vertical
 from textual.widgets import Footer, Header, Static
 
 from circuitai.core.database import DatabaseConnection
 from circuitai.output.formatter import dollars
+from circuitai.tui.screens.detail import (
+    AccountsDetailScreen,
+    ActivitiesDetailScreen,
+    BillsDetailScreen,
+    CardsDetailScreen,
+    DeadlinesDetailScreen,
+    InvestmentsDetailScreen,
+)
+
+
+class DrillDownPanel(Static):
+    """Base panel that supports drill-down on click/Enter."""
+
+    can_focus = True
+    detail_screen_class = None  # Subclasses set this
+
+    def __init__(self, db: DatabaseConnection, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.db = db
+
+    def on_click(self) -> None:
+        if self.detail_screen_class:
+            self.app.push_screen(self.detail_screen_class(self.db))
+
+    def key_enter(self) -> None:
+        if self.detail_screen_class:
+            self.app.push_screen(self.detail_screen_class(self.db))
 
 
 class SummaryPanel(Static):
-    """Financial summary panel."""
+    """Financial summary panel (no drill-down)."""
 
     def __init__(self, db: DatabaseConnection, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -40,12 +66,10 @@ class SummaryPanel(Static):
             self.update(f"[red]Error loading summary: {e}[/red]")
 
 
-class BillsPanel(Static):
+class BillsPanel(DrillDownPanel):
     """Upcoming bills panel."""
 
-    def __init__(self, db: DatabaseConnection, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.db = db
+    detail_screen_class = BillsDetailScreen
 
     def on_mount(self) -> None:
         self.refresh_data()
@@ -67,12 +91,10 @@ class BillsPanel(Static):
             self.update(f"[red]Error: {e}[/red]")
 
 
-class AccountsPanel(Static):
+class AccountsPanel(DrillDownPanel):
     """Bank accounts panel."""
 
-    def __init__(self, db: DatabaseConnection, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.db = db
+    detail_screen_class = AccountsDetailScreen
 
     def on_mount(self) -> None:
         self.refresh_data()
@@ -95,12 +117,10 @@ class AccountsPanel(Static):
             self.update(f"[red]Error: {e}[/red]")
 
 
-class CardsPanel(Static):
+class CardsPanel(DrillDownPanel):
     """Credit cards panel."""
 
-    def __init__(self, db: DatabaseConnection, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.db = db
+    detail_screen_class = CardsDetailScreen
 
     def on_mount(self) -> None:
         self.refresh_data()
@@ -121,12 +141,10 @@ class CardsPanel(Static):
             self.update(f"[red]Error: {e}[/red]")
 
 
-class DeadlinesPanel(Static):
+class DeadlinesPanel(DrillDownPanel):
     """Deadlines panel."""
 
-    def __init__(self, db: DatabaseConnection, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.db = db
+    detail_screen_class = DeadlinesDetailScreen
 
     def on_mount(self) -> None:
         self.refresh_data()
@@ -150,12 +168,10 @@ class DeadlinesPanel(Static):
             self.update(f"[red]Error: {e}[/red]")
 
 
-class ActivitiesPanel(Static):
+class ActivitiesPanel(DrillDownPanel):
     """Kids activities panel."""
 
-    def __init__(self, db: DatabaseConnection, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.db = db
+    detail_screen_class = ActivitiesDetailScreen
 
     def on_mount(self) -> None:
         self.refresh_data()
@@ -184,12 +200,10 @@ class ActivitiesPanel(Static):
             self.update(f"[red]Error: {e}[/red]")
 
 
-class InvestmentsPanel(Static):
+class InvestmentsPanel(DrillDownPanel):
     """Investments panel."""
 
-    def __init__(self, db: DatabaseConnection, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.db = db
+    detail_screen_class = InvestmentsDetailScreen
 
     def on_mount(self) -> None:
         self.refresh_data()
@@ -231,6 +245,14 @@ class CircuitDashboard(App):
         min-height: 8;
     }
 
+    .panel:focus {
+        border: double $accent;
+    }
+
+    .panel:hover {
+        border: solid $accent;
+    }
+
     #summary-panel {
         column-span: 2;
     }
@@ -239,6 +261,8 @@ class CircuitDashboard(App):
     BINDINGS = [
         Binding("q", "quit", "Quit"),
         Binding("r", "refresh", "Refresh"),
+        Binding("tab", "focus_next", "Next Panel", show=False),
+        Binding("shift+tab", "focus_previous", "Prev Panel", show=False),
     ]
 
     def __init__(self, db: DatabaseConnection, **kwargs) -> None:
