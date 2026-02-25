@@ -425,6 +425,7 @@ def launch_repl(ctx: CircuitContext) -> None:
         completer=completer,
         history=history,
         enable_history_search=True,
+        complete_while_typing=True,
     )
 
     while True:
