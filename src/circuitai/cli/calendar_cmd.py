@@ -47,7 +47,7 @@ def calendar_setup(ctx: CircuitContext) -> None:
     db.execute(
         """INSERT OR REPLACE INTO adapter_state (id, adapter_name, key, value)
            VALUES (?, 'calendar', 'credentials', ?)""",
-        (f"calendar-creds", creds),
+        ("calendar-creds", creds),
     )
     db.commit()
 

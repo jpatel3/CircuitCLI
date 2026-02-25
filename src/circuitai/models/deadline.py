@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date
 from typing import Any, ClassVar
 
 from circuitai.models.base import BaseRepository, CircuitModel, now_iso

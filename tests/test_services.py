@@ -8,10 +8,10 @@ import pytest
 from circuitai.core.database import DatabaseConnection
 from circuitai.core.migrations import initialize_database
 from circuitai.services.account_service import AccountService
-from circuitai.services.card_service import CardService
-from circuitai.services.investment_service import InvestmentService
-from circuitai.services.deadline_service import DeadlineService
 from circuitai.services.activity_service import ActivityService
+from circuitai.services.card_service import CardService
+from circuitai.services.deadline_service import DeadlineService
+from circuitai.services.investment_service import InvestmentService
 from circuitai.services.mortgage_service import MortgageService
 
 

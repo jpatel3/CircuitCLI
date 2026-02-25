@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import date
 from typing import Any
 
 from circuitai.core.database import DatabaseConnection
 from circuitai.core.exceptions import ValidationError
-from circuitai.models.base import now_iso
 from circuitai.models.deadline import Deadline, DeadlineRepository
 
 

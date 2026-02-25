@@ -7,8 +7,7 @@ from typing import Any, ClassVar
 
 from pydantic import Field
 
-from circuitai.core.database import DatabaseConnection
-from circuitai.models.base import BaseRepository, CircuitModel, new_id, now_iso
+from circuitai.models.base import BaseRepository, CircuitModel
 
 
 class Bill(CircuitModel):
@@ -91,7 +90,7 @@ class BillRepository(BaseRepository):
 
     def get_due_soon(self, within_days: int = 7) -> list[Bill]:
         """Get active bills due within N days (based on due_day of current month)."""
-        from datetime import date, timedelta
+        from datetime import date
         today = date.today()
         rows = self.db.fetchall(
             "SELECT * FROM bills WHERE is_active = 1 AND due_day IS NOT NULL ORDER BY due_day",

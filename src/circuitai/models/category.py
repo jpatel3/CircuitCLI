@@ -6,7 +6,6 @@ from typing import Any, ClassVar
 
 from circuitai.models.base import BaseRepository, CircuitModel
 
-
 # Standard bill categories
 BILL_CATEGORIES = [
     "electricity", "water", "gas", "internet", "phone", "cable",

@@ -1,6 +1,5 @@
 """Tests for core infrastructure."""
 
-import os
 import tempfile
 from pathlib import Path
 

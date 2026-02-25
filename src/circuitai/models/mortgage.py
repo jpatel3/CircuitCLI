@@ -6,7 +6,7 @@ from typing import Any, ClassVar
 
 from pydantic import Field
 
-from circuitai.models.base import BaseRepository, CircuitModel, new_id, now_iso
+from circuitai.models.base import BaseRepository, CircuitModel
 
 
 class Mortgage(CircuitModel):

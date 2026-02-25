@@ -6,8 +6,7 @@ from typing import Any, ClassVar
 
 from pydantic import Field
 
-from circuitai.core.database import DatabaseConnection
-from circuitai.models.base import BaseRepository, CircuitModel, new_id, now_iso
+from circuitai.models.base import BaseRepository, CircuitModel, now_iso
 
 
 class Account(CircuitModel):

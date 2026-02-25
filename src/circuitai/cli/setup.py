@@ -7,7 +7,7 @@ from rich.console import Console
 from rich.panel import Panel
 
 from circuitai.cli.main import CircuitContext, pass_context
-from circuitai.core.config import get_data_dir, load_config, save_config, update_config
+from circuitai.core.config import get_data_dir, load_config, update_config
 from circuitai.core.database import DatabaseConnection
 from circuitai.core.encryption import MasterKeyManager
 from circuitai.core.migrations import initialize_database

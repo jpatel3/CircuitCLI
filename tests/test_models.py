@@ -8,12 +8,12 @@ import pytest
 from circuitai.core.database import DatabaseConnection
 from circuitai.core.exceptions import NotFoundError
 from circuitai.core.migrations import initialize_database
-from circuitai.models.account import Account, AccountRepository
+from circuitai.models.account import Account
+from circuitai.models.activity import Child, ChildRepository
 from circuitai.models.bill import Bill, BillRepository
-from circuitai.models.card import Card, CardRepository
-from circuitai.models.investment import Investment, InvestmentRepository
-from circuitai.models.deadline import Deadline, DeadlineRepository
-from circuitai.models.activity import Child, ChildRepository, Activity, ActivityRepository
+from circuitai.models.card import Card
+from circuitai.models.deadline import Deadline
+from circuitai.models.investment import Investment
 
 
 @pytest.fixture

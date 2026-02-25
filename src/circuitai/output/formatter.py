@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 import json
-import sys
 from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-from rich.text import Text
 
 # Human output goes to stdout; in JSON mode, human messages go to stderr
 _console = Console()

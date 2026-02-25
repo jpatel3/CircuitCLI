@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Generator
 
-from circuitai.core.config import get_data_dir, load_config
+from circuitai.core.config import get_data_dir
 from circuitai.core.exceptions import DatabaseError
 
 # Try SQLCipher, fall back to plain sqlite3

@@ -5,7 +5,7 @@ from __future__ import annotations
 import click
 
 from circuitai.cli.main import CircuitContext, JsonGroup, pass_context
-from circuitai.output.formatter import dollars, format_date
+from circuitai.output.formatter import format_date
 
 
 @click.group(cls=JsonGroup)
@@ -94,7 +94,7 @@ def deadlines_show(ctx: CircuitContext, deadline_id: str) -> None:
         if days < 0:
             ctx.formatter.print(f"  Status: [red]OVERDUE by {abs(days)} days[/red]")
         elif days == 0:
-            ctx.formatter.print(f"  Status: [yellow]Due TODAY[/yellow]")
+            ctx.formatter.print("  Status: [yellow]Due TODAY[/yellow]")
         else:
             ctx.formatter.print(f"  Status: {days} days remaining")
 

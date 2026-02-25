@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 from circuitai.core.database import DatabaseConnection
-from circuitai.output.formatter import dollars
 from circuitai.services.account_service import AccountService
 from circuitai.services.activity_service import ActivityService
 from circuitai.services.bill_service import BillService

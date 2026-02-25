@@ -6,7 +6,6 @@ from datetime import date
 
 import click
 from rich.console import Console
-from rich.panel import Panel
 
 from circuitai.cli.main import CircuitContext, pass_context
 from circuitai.output.formatter import dollars, format_date

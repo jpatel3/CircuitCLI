@@ -61,7 +61,7 @@ class QueryService:
         if re.search(r"\bnet\s*worth|financial|summary|overview\b", text_lower):
             return self._summary_info()
 
-        return f"I'm not sure how to answer that. Try asking about bills, accounts, cards, investments, or activities."
+        return "I'm not sure how to answer that. Try asking about bills, accounts, cards, investments, or activities."
 
     def query_json(self, text: str) -> dict[str, Any]:
         """Return structured query results."""
@@ -113,7 +113,7 @@ class QueryService:
         summary = svc.get_summary()
 
         lines = [
-            f"Bills Overview:",
+            "Bills Overview:",
             f"  Total bills: {summary['total_bills']}",
             f"  Monthly total: {dollars(summary['monthly_total_cents'])}",
             f"  Estimated monthly (incl. yearly/quarterly): {dollars(summary['estimated_monthly_cents'])}",
@@ -158,7 +158,7 @@ class QueryService:
             return "No investment accounts set up."
 
         lines = [
-            f"Investments:",
+            "Investments:",
             f"  Total value: {dollars(perf['total_value_cents'])}",
             f"  Cost basis: {dollars(perf['total_cost_basis_cents'])}",
             f"  Gain/Loss: {dollars(perf['total_gain_loss_cents'])} ({perf['gain_loss_pct']}%)",
