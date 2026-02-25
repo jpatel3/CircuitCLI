@@ -127,8 +127,8 @@ def _seed_demo(db) -> dict:
         name="Primary Residence",
         lender="Townee Mortgage",
         original_amount_cents=45000000,
-        current_balance_cents=38000000,
-        interest_rate=6.875,
+        balance_cents=38000000,
+        interest_rate_bps=688,
         monthly_payment_cents=295000,
         start_date="2022-06-01",
         term_months=360,
@@ -157,8 +157,8 @@ def _seed_demo(db) -> dict:
 
     # --- Children & Activities ---
     act_svc = ActivityService(db)
-    child1 = act_svc.add_child("Jake", birth_year=2017)
-    child2 = act_svc.add_child("Emma", birth_year=2019)
+    child1 = act_svc.add_child("Jake", birth_date="2017-06-15")
+    child2 = act_svc.add_child("Emma", birth_date="2019-03-22")
     counts["children"] = 2
 
     activities = [
