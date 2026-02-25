@@ -5,7 +5,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any
 
-from circuitai.adapters.protocol import CircuitAdapter
 from circuitai.core.database import DatabaseConnection
 
 

@@ -7,8 +7,7 @@ from datetime import date
 from typing import Any
 
 from circuitai.core.database import DatabaseConnection
-from circuitai.core.exceptions import NotFoundError, ValidationError
-from circuitai.models.base import now_iso
+from circuitai.core.exceptions import ValidationError
 from circuitai.models.bill import Bill, BillPayment, BillPaymentRepository, BillRepository
 
 
@@ -196,5 +195,8 @@ class BillService:
             "quarterly_total_cents": total_quarterly,
             "estimated_monthly_cents": total_monthly + (total_yearly // 12) + (total_quarterly // 3),
             "due_soon": len(due_soon),
-            "due_soon_bills": [{"name": b.name, "amount_cents": b.amount_cents, "due_day": b.due_day} for b in due_soon],
+            "due_soon_bills": [
+                {"name": b.name, "amount_cents": b.amount_cents, "due_day": b.due_day}
+                for b in due_soon
+            ],
         }

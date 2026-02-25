@@ -119,7 +119,10 @@ def accounts_show(ctx: CircuitContext, account_id: str) -> None:
         ctx.formatter.print("\n  [bold]Recent Transactions:[/bold]")
         for t in txns:
             sign = "+" if t.amount_cents > 0 else ""
-            ctx.formatter.print(f"    {format_date(t.transaction_date)} {t.description}: {sign}{dollars(t.amount_cents)}")
+            ctx.formatter.print(
+                f"    {format_date(t.transaction_date)} {t.description}:"
+                f" {sign}{dollars(t.amount_cents)}"
+            )
 
 
 @accounts.command("update-balance")
@@ -163,7 +166,10 @@ def accounts_transactions(ctx: CircuitContext, account_id: str, limit: int) -> N
     rows = []
     for t in txns:
         sign = "+" if t.amount_cents > 0 else ""
-        rows.append([format_date(t.transaction_date), t.description, f"{sign}{dollars(t.amount_cents)}", t.category or "—"])
+        rows.append([
+            format_date(t.transaction_date), t.description,
+            f"{sign}{dollars(t.amount_cents)}", t.category or "—",
+        ])
 
     ctx.formatter.table(
         title="Transactions",

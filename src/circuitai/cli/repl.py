@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import shlex
-import sys
-from typing import Any
 
 import click
 from prompt_toolkit import PromptSession
@@ -15,9 +13,7 @@ from rich.panel import Panel
 
 from circuitai.cli.main import CircuitContext
 from circuitai.core.config import get_history_path, load_config
-from circuitai.core.database import DatabaseConnection
 from circuitai.core.encryption import MasterKeyManager
-from circuitai.core.migrations import initialize_database
 
 console = Console()
 
@@ -87,9 +83,6 @@ def _route_slash_command(ctx: CircuitContext, command: str) -> None:
     parts = command.lstrip("/").split(None, 1)
     cmd_name = parts[0].lower()
     rest = parts[1] if len(parts) > 1 else ""
-
-    # Aliases
-    aliases = {"quit": "_quit", "exit": "_quit", "help": "_help", "sync": "adapters sync"}
 
     if cmd_name in ("quit", "exit"):
         raise EOFError()

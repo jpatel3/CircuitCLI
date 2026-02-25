@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-import importlib
+# Python 3.10+ has importlib.metadata in stdlib
+from importlib.metadata import entry_points
 from typing import Any
 
 from circuitai.adapters.protocol import CircuitAdapter
 from circuitai.core.exceptions import AdapterError
-
-# Python 3.10+ has importlib.metadata in stdlib
-from importlib.metadata import entry_points
 
 
 class AdapterRegistry:

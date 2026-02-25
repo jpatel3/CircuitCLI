@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import csv
 import os
-from datetime import date
 from typing import Any
 
 import click

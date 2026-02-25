@@ -62,7 +62,10 @@ def activities_list(ctx: CircuitContext) -> None:
 @click.option("--schedule", default="", help="e.g. 'Mon/Wed 5-6pm'")
 @click.option("--location", default="")
 @pass_context
-def activities_add(ctx: CircuitContext, name, child_name, sport, provider, season, cost, frequency, schedule, location) -> None:
+def activities_add(
+    ctx: CircuitContext, name, child_name, sport, provider,
+    season, cost, frequency, schedule, location,
+) -> None:
     """Add a new activity."""
     from circuitai.services.activity_service import ActivityService
 
@@ -154,7 +157,11 @@ def activities_schedule(ctx: CircuitContext) -> None:
     act_list = svc.list_activities()
 
     if ctx.json_mode:
-        ctx.formatter.json([{"name": a.name, "child_id": a.child_id, "schedule": a.schedule, "location": a.location} for a in act_list if a.schedule])
+        ctx.formatter.json([
+            {"name": a.name, "child_id": a.child_id,
+             "schedule": a.schedule, "location": a.location}
+            for a in act_list if a.schedule
+        ])
         return
 
     scheduled = [a for a in act_list if a.schedule]

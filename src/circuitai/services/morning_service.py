@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date
 from typing import Any
 
 from circuitai.core.database import DatabaseConnection
@@ -46,7 +46,6 @@ class MorningService:
             last_payment = self.bills.get_last_payment(bill.id)
             # Check if already paid this period
             if last_payment:
-                from datetime import datetime
                 paid = date.fromisoformat(last_payment.paid_date[:10])
                 if (today - paid).days < 25:  # Paid recently, skip
                     continue
@@ -91,7 +90,6 @@ class MorningService:
         attention.sort(key=lambda x: x.get("days_until", 999))
 
         # This week's summary
-        week_end = today + timedelta(days=7)
         bills_this_week = self.bills.get_due_soon(within_days=7)
         week_bill_total = sum(b.amount_cents for b in bills_this_week)
         upcoming_deadlines = self.deadlines.get_upcoming(within_days=7)

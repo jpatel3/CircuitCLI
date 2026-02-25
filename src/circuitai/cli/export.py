@@ -10,7 +10,6 @@ from typing import Any
 import click
 
 from circuitai.cli.main import CircuitContext, JsonGroup, pass_context
-from circuitai.output.formatter import dollars
 
 
 @click.group(cls=JsonGroup)
@@ -21,7 +20,10 @@ def export(ctx: CircuitContext) -> None:
 
 
 @export.command("csv")
-@click.option("--entity", required=True, type=click.Choice(["bills", "accounts", "cards", "investments", "deadlines", "activities"]))
+@click.option(
+    "--entity", required=True,
+    type=click.Choice(["bills", "accounts", "cards", "investments", "deadlines", "activities"]),
+)
 @click.option("--output", "-o", "output_file", default=None, help="Output file path (stdout if not specified).")
 @pass_context
 def export_csv(ctx: CircuitContext, entity: str, output_file: str | None) -> None:
@@ -48,7 +50,10 @@ def export_csv(ctx: CircuitContext, entity: str, output_file: str | None) -> Non
 
 
 @export.command("json")
-@click.option("--entity", required=True, type=click.Choice(["bills", "accounts", "cards", "investments", "deadlines", "activities", "all"]))
+@click.option(
+    "--entity", required=True,
+    type=click.Choice(["bills", "accounts", "cards", "investments", "deadlines", "activities", "all"]),
+)
 @click.option("--output", "-o", "output_file", default=None)
 @pass_context
 def export_json(ctx: CircuitContext, entity: str, output_file: str | None) -> None:

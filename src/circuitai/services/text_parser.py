@@ -8,15 +8,17 @@ from typing import Any
 
 from circuitai.core.database import DatabaseConnection
 from circuitai.core.exceptions import ParseError
-from circuitai.models.base import now_iso
-
 
 # Amount patterns: $142, $142.30, 142 dollars
 _AMOUNT_RE = re.compile(r"\$\s*([\d,]+(?:\.\d{1,2})?)|(\d+(?:\.\d{1,2})?)\s*dollars?", re.IGNORECASE)
 
 # Date patterns
 _DATE_PATTERNS = [
-    (re.compile(r"\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(\d{1,2})(?:\s*,?\s*(\d{4}))?\b", re.IGNORECASE), "month_day"),
+    (re.compile(
+        r"\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|"
+        r"sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(\d{1,2})(?:\s*,?\s*(\d{4}))?\b",
+        re.IGNORECASE,
+    ), "month_day"),
     (re.compile(r"\b(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?\b"), "slash"),
     (re.compile(r"\btomorrow\b", re.IGNORECASE), "tomorrow"),
     (re.compile(r"\bnext\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b", re.IGNORECASE), "next_day"),
@@ -30,7 +32,10 @@ _RECURRENCE_RE = re.compile(r"\b(monthly|quarterly|yearly|annually|weekly|biweek
 _BILL_KEYWORDS = {"bill", "utility", "electric", "water", "gas", "internet", "insurance", "subscription", "hoa", "tax"}
 _PAYMENT_KEYWORDS = {"paid", "pay", "payment", "settled"}
 _DEADLINE_KEYWORDS = {"deadline", "due", "appointment", "dentist", "doctor", "meeting"}
-_ACTIVITY_KEYWORDS = {"practice", "game", "lesson", "class", "registration", "tournament", "hockey", "soccer", "gymnastics", "tennis", "baseball", "basketball", "swimming"}
+_ACTIVITY_KEYWORDS = {
+    "practice", "game", "lesson", "class", "registration", "tournament",
+    "hockey", "soccer", "gymnastics", "tennis", "baseball", "basketball", "swimming",
+}
 
 _MONTH_MAP = {
     "jan": 1, "january": 1, "feb": 2, "february": 2, "mar": 3, "march": 3,

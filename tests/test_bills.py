@@ -27,7 +27,10 @@ def svc(db):
 
 class TestBillService:
     def test_add_bill(self, svc):
-        bill = svc.add_bill(name="JCPL Electric", provider="JCPL", category="electricity", amount_cents=14200, due_day=15)
+        bill = svc.add_bill(
+            name="JCPL Electric", provider="JCPL", category="electricity",
+            amount_cents=14200, due_day=15,
+        )
         assert bill.name == "JCPL Electric"
         assert bill.amount_cents == 14200
         assert bill.due_day == 15
@@ -140,10 +143,8 @@ class TestBillDeadlineIntegration:
         assert len(linked) == 1
 
     def test_pay_bill_completes_deadline_and_creates_next(self, db):
-        from circuitai.services.deadline_service import DeadlineService
         from circuitai.models.deadline import DeadlineRepository
         svc = BillService(db)
-        dl_svc = DeadlineService(db)
         dl_repo = DeadlineRepository(db)
 
         bill = svc.add_bill(name="Gas", amount_cents=8000, due_day=10, frequency="monthly")

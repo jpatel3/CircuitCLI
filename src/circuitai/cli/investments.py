@@ -53,14 +53,20 @@ def investments_list(ctx: CircuitContext) -> None:
 @investments.command("add")
 @click.option("--name", required=True)
 @click.option("--institution", required=True)
-@click.option("--type", "account_type", default="brokerage", help="Type: brokerage, 401k, 529, ira, roth_ira, hsa, crypto.")
+@click.option(
+    "--type", "account_type", default="brokerage",
+    help="Type: brokerage, 401k, 529, ira, roth_ira, hsa, crypto.",
+)
 @click.option("--value", type=float, default=0, help="Current value in dollars.")
 @click.option("--cost-basis", type=float, default=0, help="Cost basis in dollars.")
 @click.option("--recurring", type=float, default=0, help="Recurring contribution in dollars.")
 @click.option("--frequency", default="monthly")
 @click.option("--notes", default="")
 @pass_context
-def investments_add(ctx: CircuitContext, name, institution, account_type, value, cost_basis, recurring, frequency, notes) -> None:
+def investments_add(
+    ctx: CircuitContext, name, institution, account_type, value,
+    cost_basis, recurring, frequency, notes,
+) -> None:
     """Add a new investment account."""
     from circuitai.services.investment_service import InvestmentService
 
