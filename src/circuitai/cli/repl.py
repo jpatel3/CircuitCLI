@@ -394,21 +394,21 @@ def launch_repl(ctx: CircuitContext) -> None:
             if not text:
                 continue
 
-            if text.startswith("/"):
+            # Check for file path BEFORE slash command routing
+            # (dragged paths like /Users/foo/file.pdf start with /)
+            from circuitai.services.file_import_service import looks_like_file_path
+
+            detected_path = looks_like_file_path(text)
+            if detected_path:
+                _handle_file_import(ctx, detected_path)
+            elif text.startswith("/"):
                 _route_slash_command(ctx, text)
             elif text.lower() in ("morning", "catchup"):
                 _route_slash_command(ctx, "/morning")
             elif text.lower() == "undo":
                 _route_slash_command(ctx, "/undo")
             else:
-                # Check for dragged file path before natural language routing
-                from circuitai.services.file_import_service import looks_like_file_path
-
-                detected_path = looks_like_file_path(text)
-                if detected_path:
-                    _handle_file_import(ctx, detected_path)
-                else:
-                    _route_natural_text(ctx, text)
+                _route_natural_text(ctx, text)
 
             console.print()  # blank line between outputs
 
