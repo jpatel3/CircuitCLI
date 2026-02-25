@@ -67,10 +67,10 @@ def bills_list(ctx: CircuitContext, show_all: bool) -> None:
 
 
 @bills.command("add")
-@click.option("--name", prompt="Bill name", required=True, help="Bill name.")
+@click.option("--name", prompt="Bill name", default="Electric Bill", help="Bill name.")
 @click.option("--provider", default="", help="Provider/company name.")
 @click.option("--category", default="other", help="Category (electricity, water, gas, internet, etc.).")
-@click.option("--amount", type=float, prompt="Amount in dollars", required=True, help="Amount in dollars.")
+@click.option("--amount", type=float, prompt="Amount in dollars", default=0, help="Amount in dollars.")
 @click.option("--due-day", type=int, default=None, help="Day of month bill is due (1-31).")
 @click.option("--frequency", default="monthly", help="Frequency: monthly, quarterly, yearly, one-time.")
 @click.option("--auto-pay/--no-auto-pay", default=False, help="Whether this bill is on auto-pay.")
