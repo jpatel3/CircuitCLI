@@ -99,3 +99,81 @@ class TestBillService:
         from circuitai.core.exceptions import ValidationError
         with pytest.raises(ValidationError, match="negative"):
             svc.add_bill(name="Bad", amount_cents=-100)
+
+
+class TestBillDeadlineIntegration:
+    """Tests for auto-creating deadlines from bills (#29)."""
+
+    def test_add_bill_creates_deadline(self, db):
+        from circuitai.services.deadline_service import DeadlineService
+        svc = BillService(db)
+        dl_svc = DeadlineService(db)
+
+        bill = svc.add_bill(name="JCPL Electric", amount_cents=14200, due_day=15)
+        deadlines = dl_svc.list_deadlines()
+        linked = [d for d in deadlines if d.linked_bill_id == bill.id]
+        assert len(linked) == 1
+        assert "JCPL Electric" in linked[0].title
+        assert linked[0].priority == "high"
+        assert linked[0].category == "bill"
+
+    def test_add_bill_no_due_day_no_deadline(self, db):
+        from circuitai.services.deadline_service import DeadlineService
+        svc = BillService(db)
+        dl_svc = DeadlineService(db)
+
+        svc.add_bill(name="No Due Day Bill", amount_cents=5000)
+        deadlines = dl_svc.list_deadlines()
+        assert len(deadlines) == 0
+
+    def test_no_duplicate_deadlines(self, db):
+        from circuitai.models.deadline import DeadlineRepository
+        svc = BillService(db)
+
+        bill = svc.add_bill(name="Water", amount_cents=6750, due_day=20)
+        # Manually call _ensure_deadline again
+        svc._ensure_deadline(bill)
+        svc._ensure_deadline(bill)
+
+        dl_repo = DeadlineRepository(db)
+        linked = dl_repo.find_by_linked_bill(bill.id)
+        assert len(linked) == 1
+
+    def test_pay_bill_completes_deadline_and_creates_next(self, db):
+        from circuitai.services.deadline_service import DeadlineService
+        from circuitai.models.deadline import DeadlineRepository
+        svc = BillService(db)
+        dl_svc = DeadlineService(db)
+        dl_repo = DeadlineRepository(db)
+
+        bill = svc.add_bill(name="Gas", amount_cents=8000, due_day=10, frequency="monthly")
+        # Should have 1 active deadline
+        linked = dl_repo.find_by_linked_bill(bill.id, active_only=True)
+        assert len(linked) == 1
+
+        # Pay the bill
+        svc.pay_bill(bill.id, amount_cents=8000, paid_date="2026-02-10")
+
+        # Old deadline should be completed
+        all_linked = dl_repo.find_by_linked_bill(bill.id, active_only=False)
+        completed = [d for d in all_linked if d.is_completed]
+        assert len(completed) == 1
+
+        # New deadline should exist for next cycle
+        active = dl_repo.find_by_linked_bill(bill.id, active_only=True)
+        assert len(active) == 1
+        assert active[0].due_date > completed[0].due_date
+
+    def test_pay_onetime_bill_no_renewal(self, db):
+        from circuitai.models.deadline import DeadlineRepository
+        svc = BillService(db)
+        dl_repo = DeadlineRepository(db)
+
+        bill = svc.add_bill(name="One-Time Fee", amount_cents=50000, due_day=15, frequency="one-time")
+        assert len(dl_repo.find_by_linked_bill(bill.id, active_only=True)) == 1
+
+        svc.pay_bill(bill.id, amount_cents=50000, paid_date="2026-02-15")
+
+        # Should have no active deadline (completed, no renewal)
+        active = dl_repo.find_by_linked_bill(bill.id, active_only=True)
+        assert len(active) == 0

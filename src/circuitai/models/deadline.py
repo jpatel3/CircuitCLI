@@ -75,6 +75,15 @@ class DeadlineRepository(BaseRepository):
     def complete(self, deadline_id: str) -> Deadline:
         return self.update(deadline_id, is_completed=1, completed_at=now_iso())  # type: ignore[return-value]
 
+    def find_by_linked_bill(self, bill_id: str, active_only: bool = True) -> list[Deadline]:
+        """Find deadlines linked to a specific bill."""
+        sql = "SELECT * FROM deadlines WHERE linked_bill_id = ?"
+        if active_only:
+            sql += " AND is_completed = 0"
+        sql += " ORDER BY due_date"
+        rows = self.db.fetchall(sql, (bill_id,))
+        return [Deadline.from_row(r) for r in rows]
+
     def list_all(self, active_only: bool = True) -> list[Deadline]:
         sql = "SELECT * FROM deadlines"
         if active_only:

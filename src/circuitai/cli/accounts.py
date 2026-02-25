@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import click
 
-from circuitai.cli.main import CircuitContext, pass_context
+from circuitai.cli.main import CircuitContext, JsonGroup, pass_context
 from circuitai.output.formatter import dollars, format_date
 
 
-@click.group()
+@click.group(cls=JsonGroup)
 @pass_context
 def accounts(ctx: CircuitContext) -> None:
     """Manage bank accounts."""

@@ -43,6 +43,41 @@ class CircuitContext:
 pass_context = click.make_pass_decorator(CircuitContext, ensure=True)
 
 
+def json_group(name=None, **attrs):
+    """Create a Click group with a --json option that propagates to context.
+
+    Use instead of @click.group() on subcommand groups.
+    """
+    attrs.setdefault("cls", JsonGroup)
+    return click.group(name, **attrs)
+
+
+def _json_callback(ctx, param, value):
+    """Eager callback to set JSON mode on the CircuitContext."""
+    if value:
+        circuit_ctx = ctx.find_object(CircuitContext)
+        if circuit_ctx:
+            circuit_ctx.json_mode = True
+            circuit_ctx.formatter.json_mode = True
+    return value
+
+
+class JsonGroup(click.Group):
+    """Click Group subclass that adds --json flag automatically.
+
+    Allows `circuit bills --json list` in addition to `circuit --json bills list`.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.params.insert(0, click.Option(
+            ["--json"], "json_mode", is_flag=True, default=False,
+            help="Output JSON for agent consumption.",
+            expose_value=False, is_eager=True,
+            callback=_json_callback,
+        ))
+
+
 @click.group(invoke_without_command=True)
 @click.option("--json", "json_mode", is_flag=True, help="Output JSON for agent consumption.")
 @click.version_option(__version__, prog_name="CircuitAI")

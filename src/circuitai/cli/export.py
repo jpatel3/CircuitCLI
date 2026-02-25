@@ -9,11 +9,11 @@ from typing import Any
 
 import click
 
-from circuitai.cli.main import CircuitContext, pass_context
+from circuitai.cli.main import CircuitContext, JsonGroup, pass_context
 from circuitai.output.formatter import dollars
 
 
-@click.group()
+@click.group(cls=JsonGroup)
 @pass_context
 def export(ctx: CircuitContext) -> None:
     """Export data to CSV or JSON."""

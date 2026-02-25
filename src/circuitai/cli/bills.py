@@ -6,11 +6,11 @@ from datetime import date
 
 import click
 
-from circuitai.cli.main import CircuitContext, pass_context
+from circuitai.cli.main import CircuitContext, JsonGroup, pass_context
 from circuitai.output.formatter import dollars, format_date
 
 
-@click.group()
+@click.group(cls=JsonGroup)
 @pass_context
 def bills(ctx: CircuitContext) -> None:
     """Manage bills (list, add, show, pay, edit, delete, summary)."""
