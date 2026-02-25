@@ -142,3 +142,6 @@ cli.add_command(export)
 
 from circuitai.cli.seed import seed_cmd
 cli.add_command(seed_cmd, "seed")
+
+from circuitai.cli.integrations_cmd import integrations
+cli.add_command(integrations)
