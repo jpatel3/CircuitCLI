@@ -30,7 +30,12 @@ def accounts_list(ctx: CircuitContext) -> None:
         return
 
     if not accts:
-        ctx.formatter.info("No bank accounts found. Use 'circuit accounts add' to add one.")
+        ctx.formatter.info(
+            "No bank accounts found. Add one with:\n\n"
+            "  /accounts add\n\n"
+            "  You'll be prompted for account name and bank.\n"
+            "  Example: 'BoA Checking' at 'Bank of America'"
+        )
         return
 
     rows = []

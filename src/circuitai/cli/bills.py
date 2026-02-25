@@ -33,7 +33,12 @@ def bills_list(ctx: CircuitContext, show_all: bool) -> None:
         return
 
     if not bill_list:
-        ctx.formatter.info("No bills found. Use 'circuit bills add' to add one.")
+        ctx.formatter.info(
+            "No bills found. Add one with:\n\n"
+            "  /bills add\n\n"
+            "  You'll be prompted for bill name and amount.\n"
+            "  Example: 'Electric Bill' for $142.00"
+        )
         return
 
     rows = []

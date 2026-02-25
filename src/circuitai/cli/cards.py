@@ -30,7 +30,12 @@ def cards_list(ctx: CircuitContext) -> None:
         return
 
     if not card_list:
-        ctx.formatter.info("No credit cards found. Use 'circuit cards add' to add one.")
+        ctx.formatter.info(
+            "No credit cards found. Add one with:\n\n"
+            "  /cards add\n\n"
+            "  You'll be prompted for card name and issuer.\n"
+            "  Example: 'Chase Sapphire' at 'Chase'"
+        )
         return
 
     rows = []

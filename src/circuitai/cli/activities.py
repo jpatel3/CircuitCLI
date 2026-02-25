@@ -30,7 +30,10 @@ def activities_list(ctx: CircuitContext) -> None:
         return
 
     if not act_list:
-        ctx.formatter.info("No activities found. Use 'circuit activities add' to add one.")
+        ctx.formatter.info(
+            "No activities found. Add one with:\n\n"
+            "  /activities add --name 'Soccer' --child-name 'Jake'"
+        )
         return
 
     rows = []

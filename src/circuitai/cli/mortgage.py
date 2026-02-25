@@ -30,7 +30,12 @@ def mortgage_list(ctx: CircuitContext) -> None:
         return
 
     if not mtgs:
-        ctx.formatter.info("No mortgages found.")
+        ctx.formatter.info(
+            "No mortgages found. Add one with:\n\n"
+            "  /mortgage add --name 'Home Loan' --lender 'Wells Fargo'\n"
+            "    --original-amount 350000 --balance 280000\n"
+            "    --rate 6.5 --payment 2200"
+        )
         return
 
     rows = []

@@ -30,7 +30,10 @@ def investments_list(ctx: CircuitContext) -> None:
         return
 
     if not inv_list:
-        ctx.formatter.info("No investment accounts found.")
+        ctx.formatter.info(
+            "No investment accounts found. Add one with:\n\n"
+            "  /investments add --name '401k' --institution 'Fidelity'"
+        )
         return
 
     rows = []
