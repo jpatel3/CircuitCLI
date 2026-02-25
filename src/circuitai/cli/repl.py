@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
+import os
 import shlex
 
 import click
 from prompt_toolkit import PromptSession
-from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.history import FileHistory
 from rich.console import Console
 from rich.panel import Panel
 
+from circuitai.cli.completer import CircuitCompleter
 from circuitai.cli.main import CircuitContext
 from circuitai.core.config import get_history_path, load_config
 from circuitai.core.encryption import MasterKeyManager
@@ -18,14 +19,107 @@ from circuitai.services.undo_service import UndoService
 
 console = Console()
 
-# Slash commands available in the REPL
-SLASH_COMMANDS = [
-    "/bills", "/accounts", "/cards", "/mortgage", "/investments",
-    "/deadlines", "/activities", "/morning", "/dashboard",
-    "/calendar", "/adapters", "/export", "/sync",
-    "/settings", "/help", "/quit", "/exit", "/undo",
-    "/query",
-]
+# Slash commands with descriptions for autocomplete
+SLASH_COMMAND_META: dict[str, str] = {
+    "/bills": "Manage bills",
+    "/accounts": "Manage bank accounts",
+    "/cards": "Manage credit cards",
+    "/mortgage": "Mortgage tracking",
+    "/investments": "Investment accounts",
+    "/deadlines": "Track deadlines",
+    "/activities": "Kids activities",
+    "/morning": "Morning briefing",
+    "/dashboard": "Launch TUI dashboard",
+    "/calendar": "Calendar sync",
+    "/adapters": "Adapter management",
+    "/export": "Export data",
+    "/sync": "Sync adapters",
+    "/settings": "App settings",
+    "/query": "Ask a question",
+    "/undo": "Undo last action",
+    "/help": "Show help",
+    "/quit": "Exit REPL",
+    "/exit": "Exit REPL",
+}
+
+# Subcommands with descriptions, keyed by command name (without slash)
+SUBCOMMAND_META: dict[str, dict[str, str]] = {
+    "bills": {
+        "list": "List all bills",
+        "add": "Add a new bill",
+        "show": "Show bill details",
+        "pay": "Record a payment",
+        "edit": "Edit a bill",
+        "delete": "Delete a bill",
+        "summary": "Bill summary",
+        "link": "Auto-match transactions",
+        "unmatched": "Show unmatched transactions",
+        "confirm-match": "Confirm a transaction match",
+    },
+    "accounts": {
+        "list": "List all accounts",
+        "add": "Add a new account",
+        "show": "Show account details",
+        "update-balance": "Update balance",
+        "transactions": "Show transactions",
+    },
+    "cards": {
+        "list": "List all cards",
+        "add": "Add a new card",
+        "show": "Show card details",
+        "update-balance": "Update balance",
+        "transactions": "Show transactions",
+    },
+    "mortgage": {
+        "list": "List all mortgages",
+        "add": "Add a new mortgage",
+        "show": "Show mortgage details",
+        "pay": "Record a payment",
+        "amortization": "Amortization schedule",
+    },
+    "investments": {
+        "list": "List all accounts",
+        "add": "Add a new account",
+        "show": "Show account details",
+        "contribute": "Record a contribution",
+        "performance": "Show performance",
+    },
+    "deadlines": {
+        "list": "List all deadlines",
+        "add": "Add a new deadline",
+        "show": "Show deadline details",
+        "complete": "Mark as complete",
+        "edit": "Edit a deadline",
+        "delete": "Delete a deadline",
+    },
+    "activities": {
+        "list": "List all activities",
+        "add": "Add a new activity",
+        "show": "Show activity details",
+        "pay": "Record a payment",
+        "schedule": "Weekly schedule",
+        "costs": "Cost summary by child",
+        "children": "List all children",
+    },
+    "adapters": {
+        "list": "List available adapters",
+        "info": "Show adapter details",
+        "configure": "Configure an adapter",
+        "sync": "Sync from an adapter",
+    },
+    "calendar": {
+        "setup": "Configure CalDAV connection",
+        "sync": "Trigger calendar sync",
+        "status": "Show sync status",
+    },
+    "export": {
+        "csv": "Export as CSV",
+        "json": "Export as JSON",
+    },
+}
+
+# Flat list for backward compat in _show_help()
+SLASH_COMMANDS = list(SLASH_COMMAND_META.keys())
 
 QUESTION_STARTERS = {"what", "when", "where", "how", "which", "who", "show", "is", "are", "do", "does", "can", "will"}
 ACTION_STARTERS = {"paid", "pay", "add", "mark", "cancel", "delete", "remove", "complete", "undo"}
@@ -181,6 +275,65 @@ def _route_natural_text(ctx: CircuitContext, text: str) -> None:
     )
 
 
+def _handle_file_import(ctx: CircuitContext, file_path: str) -> None:
+    """Handle a detected file drop — prompt user and route to the appropriate importer."""
+    from circuitai.services.file_import_service import get_file_type, import_file
+
+    file_type = get_file_type(file_path)
+    basename = os.path.basename(file_path)
+    console.print(f"[cyan]Detected {file_type.upper()} file:[/cyan] {basename}")
+
+    if not click.confirm("Import this file?", default=True):
+        return
+
+    try:
+        db = ctx.get_db()
+
+        if file_type == "csv":
+            account_id = click.prompt("Account ID to import into")
+            result = import_file(db, file_path, account_id)
+            ctx.formatter.success(
+                f"Imported {result['imported']} transactions, linked {result.get('linked', 0)}."
+            )
+            if result.get("errors"):
+                for err in result["errors"][:5]:
+                    ctx.formatter.warning(f"  {err}")
+
+        elif file_type == "pdf":
+            mode = click.prompt(
+                "Mode",
+                type=click.Choice(["transactions", "bill-info"]),
+                default="bill-info",
+            )
+
+            if mode == "transactions":
+                account_id = click.prompt("Account ID to import into")
+                result = import_file(db, file_path, account_id, mode=mode)
+                ctx.formatter.success(f"Imported {result['imported']} transactions.")
+                if result.get("errors"):
+                    for err in result["errors"][:5]:
+                        ctx.formatter.warning(f"  {err}")
+            else:
+                result = import_file(db, file_path, account_id="", mode=mode)
+                amount = result.get("amount_due")
+                due = result.get("due_date")
+                if amount is not None:
+                    console.print(f"  [bold]Amount due:[/bold] ${amount / 100:.2f}")
+                if due:
+                    console.print(f"  [bold]Due date:[/bold]  {due}")
+                if amount is None and due is None:
+                    ctx.formatter.warning("Could not extract bill info from this PDF.")
+                elif click.confirm("Create a bill from this?", default=False):
+                    bill_name = click.prompt("Bill name")
+                    from circuitai.services.bill_service import BillService
+                    svc = BillService(db)
+                    svc.add_bill(name=bill_name, amount_cents=amount or 0, due_date=due or "")
+                    ctx.formatter.success(f"Bill '{bill_name}' created.")
+
+    except Exception as e:
+        ctx.formatter.error(f"Import failed: {e}")
+
+
 def launch_repl(ctx: CircuitContext) -> None:
     """Launch the interactive REPL session."""
     console.print()
@@ -213,7 +366,7 @@ def launch_repl(ctx: CircuitContext) -> None:
     console.print()
 
     # Set up prompt session with completion and history
-    completer = WordCompleter(SLASH_COMMANDS, sentence=True)
+    completer = CircuitCompleter(SLASH_COMMAND_META, SUBCOMMAND_META)
     history = FileHistory(str(get_history_path()))
     session: PromptSession[str] = PromptSession(
         completer=completer,
@@ -234,7 +387,14 @@ def launch_repl(ctx: CircuitContext) -> None:
             elif text.lower() == "undo":
                 _route_slash_command(ctx, "/undo")
             else:
-                _route_natural_text(ctx, text)
+                # Check for dragged file path before natural language routing
+                from circuitai.services.file_import_service import looks_like_file_path
+
+                detected_path = looks_like_file_path(text)
+                if detected_path:
+                    _handle_file_import(ctx, detected_path)
+                else:
+                    _route_natural_text(ctx, text)
 
             console.print()  # blank line between outputs
 

@@ -42,6 +42,23 @@ class CsvImportAdapter(BaseAdapter):
         self._description_column = click.prompt("Description column name", default="description")
         self._amount_column = click.prompt("Amount column name", default="amount")
 
+    def configure_for_file(
+        self,
+        file_path: str,
+        account_id: str,
+        date_column: str = "date",
+        description_column: str = "description",
+        amount_column: str = "amount",
+    ) -> None:
+        """Non-interactive configuration for REPL file-drop usage."""
+        if not os.path.exists(file_path):
+            raise AdapterError(f"File not found: {file_path}")
+        self._file_path = file_path
+        self._account_id = account_id
+        self._date_column = date_column
+        self._description_column = description_column
+        self._amount_column = amount_column
+
     def validate_config(self) -> bool:
         if not self._file_path or not os.path.exists(self._file_path):
             return False

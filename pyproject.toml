@@ -34,8 +34,9 @@ dependencies = [
 [project.optional-dependencies]
 crypto = ["sqlcipher3-binary>=0.5"]
 calendar = ["caldav>=1.3"]
+pdf = ["pdfplumber>=0.9"]
 dev = ["ruff", "mypy", "pytest", "pytest-cov"]
-all = ["circuitai[crypto,calendar,dev]"]
+all = ["circuitai[crypto,calendar,pdf,dev]"]
 
 [project.scripts]
 circuit = "circuitai.cli.main:cli"
@@ -43,6 +44,7 @@ circuit = "circuitai.cli.main:cli"
 [project.entry-points."circuitai.adapters"]
 manual = "circuitai.adapters.builtin.manual:ManualAdapter"
 csv-import = "circuitai.adapters.builtin.csv_import:CsvImportAdapter"
+pdf-import = "circuitai.adapters.builtin.pdf_import:PdfImportAdapter"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/circuitai"]
