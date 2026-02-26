@@ -151,3 +151,9 @@ cli.add_command(plaid_cmd, "plaid")
 
 from circuitai.cli.capture_cmd import capture
 cli.add_command(capture)
+
+from circuitai.cli.browse_cmd import browse
+cli.add_command(browse)
+
+from circuitai.cli.subscriptions_cmd import subscriptions
+cli.add_command(subscriptions)

@@ -54,8 +54,10 @@ def _seed_card(db) -> str:
 
 
 class TestMigrationV3:
-    def test_schema_version_is_3(self, db):
-        assert get_schema_version(db) == 3
+    def test_schema_version_is_current(self, db):
+        from circuitai.core.migrations import CURRENT_SCHEMA_VERSION
+
+        assert get_schema_version(db) == CURRENT_SCHEMA_VERSION
 
     def test_account_transactions_has_fingerprint(self, db):
         cols = [row["name"] for row in db.fetchall("PRAGMA table_info(account_transactions)")]

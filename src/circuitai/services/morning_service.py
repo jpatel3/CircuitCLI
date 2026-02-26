@@ -11,6 +11,7 @@ from circuitai.services.activity_service import ActivityService
 from circuitai.services.bill_service import BillService
 from circuitai.services.card_service import CardService
 from circuitai.services.deadline_service import DeadlineService
+from circuitai.services.subscription_service import SubscriptionService
 
 
 class MorningService:
@@ -23,6 +24,7 @@ class MorningService:
         self.cards = CardService(db)
         self.deadlines = DeadlineService(db)
         self.activities = ActivityService(db)
+        self.subscriptions = SubscriptionService(db)
 
     def get_briefing(self) -> dict[str, Any]:
         """Generate the full morning briefing."""
@@ -86,6 +88,20 @@ class MorningService:
                 "id": dl.id,
             })
 
+        # Upcoming subscription charges (within 3 days)
+        for sub in self.subscriptions.get_upcoming(within_days=3):
+            if sub.next_charge_date:
+                charge_date = date.fromisoformat(sub.next_charge_date[:10])
+                days_until = (charge_date - today).days
+                attention.append({
+                    "type": "subscription_charge",
+                    "title": sub.name,
+                    "amount_cents": sub.amount_cents,
+                    "due_date": sub.next_charge_date,
+                    "days_until": days_until,
+                    "id": sub.id,
+                })
+
         # Sort attention items by urgency
         attention.sort(key=lambda x: x.get("days_until", 999))
 
@@ -107,6 +123,7 @@ class MorningService:
                 "bills_due_cents": week_bill_total,
                 "bills_due_count": len(bills_this_week),
                 "deadlines_count": len(upcoming_deadlines),
+                "subscriptions_monthly_cents": self.subscriptions.get_summary()["monthly_total_cents"],
             },
             "accounts_snapshot": acct_snapshot,
             "cards_snapshot": card_snapshot,

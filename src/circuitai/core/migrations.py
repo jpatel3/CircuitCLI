@@ -5,7 +5,7 @@ from __future__ import annotations
 from circuitai.core.database import DatabaseConnection
 from circuitai.core.exceptions import DatabaseError
 
-CURRENT_SCHEMA_VERSION = 3
+CURRENT_SCHEMA_VERSION = 4
 
 MIGRATIONS: dict[int, str | list[str]] = {
     1: """
@@ -304,6 +304,33 @@ MIGRATIONS: dict[int, str | list[str]] = {
         """CREATE UNIQUE INDEX IF NOT EXISTS idx_card_txn_fingerprint
            ON card_transactions(txn_fingerprint) WHERE txn_fingerprint IS NOT NULL""",
         "INSERT INTO schema_version (version) VALUES (3)",
+    ],
+    4: [
+        # Subscriptions table for recurring charge tracking
+        """CREATE TABLE IF NOT EXISTS subscriptions (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            provider TEXT NOT NULL DEFAULT '',
+            amount_cents INTEGER NOT NULL DEFAULT 0,
+            frequency TEXT NOT NULL DEFAULT 'monthly',
+            category TEXT NOT NULL DEFAULT 'other',
+            status TEXT NOT NULL DEFAULT 'active',
+            next_charge_date TEXT,
+            last_charge_date TEXT,
+            first_detected TEXT,
+            confidence INTEGER NOT NULL DEFAULT 0,
+            match_pattern TEXT NOT NULL DEFAULT '',
+            source TEXT NOT NULL DEFAULT 'detected',
+            linked_bill_id TEXT,
+            notes TEXT NOT NULL DEFAULT '',
+            is_active INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (linked_bill_id) REFERENCES bills(id)
+        )""",
+        """CREATE INDEX IF NOT EXISTS idx_subscriptions_match_pattern
+           ON subscriptions(match_pattern)""",
+        "INSERT INTO schema_version (version) VALUES (4)",
     ],
 }
 
