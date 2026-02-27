@@ -5,7 +5,7 @@ from __future__ import annotations
 from circuitai.core.database import DatabaseConnection
 from circuitai.core.exceptions import DatabaseError
 
-CURRENT_SCHEMA_VERSION = 4
+CURRENT_SCHEMA_VERSION = 5
 
 MIGRATIONS: dict[int, str | list[str]] = {
     1: """
@@ -331,6 +331,49 @@ MIGRATIONS: dict[int, str | list[str]] = {
         """CREATE INDEX IF NOT EXISTS idx_subscriptions_match_pattern
            ON subscriptions(match_pattern)""",
         "INSERT INTO schema_version (version) VALUES (4)",
+    ],
+    5: [
+        # Lab results — health tracking hierarchy
+        """CREATE TABLE IF NOT EXISTS lab_results (
+            id TEXT PRIMARY KEY,
+            patient_name TEXT NOT NULL DEFAULT '',
+            provider TEXT NOT NULL DEFAULT '',
+            ordering_physician TEXT NOT NULL DEFAULT '',
+            order_date TEXT,
+            result_date TEXT,
+            report_fingerprint TEXT,
+            status TEXT NOT NULL DEFAULT 'completed',
+            source TEXT NOT NULL DEFAULT 'pdf',
+            notes TEXT NOT NULL DEFAULT '',
+            is_active INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )""",
+        """CREATE UNIQUE INDEX IF NOT EXISTS idx_lab_results_fingerprint
+           ON lab_results(report_fingerprint) WHERE report_fingerprint IS NOT NULL""",
+        """CREATE TABLE IF NOT EXISTS lab_panels (
+            id TEXT PRIMARY KEY,
+            lab_result_id TEXT NOT NULL,
+            panel_name TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'normal',
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (lab_result_id) REFERENCES lab_results(id) ON DELETE CASCADE
+        )""",
+        """CREATE INDEX IF NOT EXISTS idx_lab_panels_result ON lab_panels(lab_result_id)""",
+        """CREATE TABLE IF NOT EXISTS lab_markers (
+            id TEXT PRIMARY KEY,
+            lab_panel_id TEXT NOT NULL,
+            marker_name TEXT NOT NULL,
+            value TEXT NOT NULL DEFAULT '',
+            unit TEXT NOT NULL DEFAULT '',
+            reference_low TEXT NOT NULL DEFAULT '',
+            reference_high TEXT NOT NULL DEFAULT '',
+            flag TEXT NOT NULL DEFAULT 'normal',
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (lab_panel_id) REFERENCES lab_panels(id) ON DELETE CASCADE
+        )""",
+        """CREATE INDEX IF NOT EXISTS idx_lab_markers_panel ON lab_markers(lab_panel_id)""",
+        "INSERT INTO schema_version (version) VALUES (5)",
     ],
 }
 

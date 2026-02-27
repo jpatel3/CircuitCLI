@@ -36,6 +36,7 @@ SLASH_COMMAND_META: dict[str, str] = {
     "/capture": "Screen capture import",
     "/browse": "Browser-based account sync",
     "/subscriptions": "Manage subscriptions",
+    "/health": "Health tracking & lab results",
     "/export": "Export data",
     "/sync": "Sync adapters",
     "/settings": "App settings",
@@ -141,6 +142,14 @@ SUBCOMMAND_META: dict[str, dict[str, str]] = {
         "show": "Show subscription details",
         "cancel": "Cancel a subscription",
         "summary": "Cost breakdown",
+    },
+    "health": {
+        "list": "List lab results",
+        "import-lab": "Import lab PDF",
+        "show": "Show result details",
+        "review": "Mark as reviewed",
+        "flagged": "Show flagged markers",
+        "summary": "Health summary",
     },
     "export": {
         "csv": "Export as CSV",
@@ -366,6 +375,36 @@ def _handle_file_import(ctx: CircuitContext, file_path: str) -> None:
                     ctx.formatter.warning(f"  {err}")
 
         elif file_type == "pdf":
+            # Check if this looks like a health/lab PDF
+            is_health_pdf = False
+            try:
+                import pdfplumber
+                pdf = pdfplumber.open(file_path)
+                first_page = pdf.pages[0].extract_text() or "" if pdf.pages else ""
+                pdf.close()
+                health_indicators = ["labcorp", "quest", "laboratory", "specimen", "patient"]
+                if any(ind in first_page.lower() for ind in health_indicators):
+                    is_health_pdf = True
+            except Exception:
+                pass
+
+            if is_health_pdf:
+                console.print("[cyan]This looks like a lab report.[/cyan]")
+                if click.confirm("Import as lab results?", default=True):
+                    from circuitai.services.lab_service import LabService
+                    lab_svc = LabService(db)
+                    result = lab_svc.import_from_pdf(file_path)
+                    if result.get("duplicate"):
+                        ctx.formatter.warning("This report was already imported.")
+                    else:
+                        ctx.formatter.success(
+                            f"Imported {result['panels_imported']} panels, "
+                            f"{result['markers_imported']} markers."
+                        )
+                        if result["flagged_count"]:
+                            ctx.formatter.warning(f"  {result['flagged_count']} flagged markers.")
+                    return
+
             console.print("\n[bold]Import mode:[/bold]")
             console.print("  1. [cyan]transactions[/cyan] — Import transaction rows")
             console.print("  2. [cyan]bill-info[/cyan] — Extract amount due & due date")

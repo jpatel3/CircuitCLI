@@ -51,6 +51,14 @@ def morning(ctx: CircuitContext) -> None:
                     console.print(f"  [red][!][/red] {item['title']} — OVERDUE ({format_date(item['due_date'])})")
                 else:
                     console.print(f"  [yellow][!][/yellow] {item['title']} — due {format_date(item['due_date'])}")
+            elif item["type"] == "subscription_charge":
+                days = item["days_until"]
+                when = "charging TODAY" if days == 0 else f"in {days} days"
+                console.print(f"  [yellow][!][/yellow] {item['title']} — {dollars(item['amount_cents'])} {when}")
+            elif item["type"] == "lab_unreviewed":
+                flagged = item.get("flagged_count", 0)
+                flag_msg = f" ({flagged} flagged)" if flagged else ""
+                console.print(f"  [cyan][+][/cyan] {item['title']}{flag_msg} — needs review")
         console.print()
 
     else:
@@ -61,6 +69,9 @@ def morning(ctx: CircuitContext) -> None:
     console.print("[bold cyan]THIS WEEK[/bold cyan]")
     console.print(f"  {dollars(week['bills_due_cents'])} in bills due ({week['bills_due_count']} bills)")
     console.print(f"  {week['deadlines_count']} deadlines upcoming")
+    flagged_markers = week.get("health_flagged_markers", 0)
+    if flagged_markers:
+        console.print(f"  [red]{flagged_markers} flagged lab markers[/red]")
     console.print()
 
     # Accounts snapshot

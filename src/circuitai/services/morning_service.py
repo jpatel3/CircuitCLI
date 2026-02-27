@@ -11,6 +11,7 @@ from circuitai.services.activity_service import ActivityService
 from circuitai.services.bill_service import BillService
 from circuitai.services.card_service import CardService
 from circuitai.services.deadline_service import DeadlineService
+from circuitai.services.lab_service import LabService
 from circuitai.services.subscription_service import SubscriptionService
 
 
@@ -25,6 +26,7 @@ class MorningService:
         self.deadlines = DeadlineService(db)
         self.activities = ActivityService(db)
         self.subscriptions = SubscriptionService(db)
+        self.lab = LabService(db)
 
     def get_briefing(self) -> dict[str, Any]:
         """Generate the full morning briefing."""
@@ -102,6 +104,18 @@ class MorningService:
                     "id": sub.id,
                 })
 
+        # Unreviewed lab results
+        unreviewed_labs = [r for r in self.lab.list_results() if r.status != "reviewed"]
+        for lab in unreviewed_labs:
+            flagged = self.lab.get_flagged_markers(lab.id)
+            attention.append({
+                "type": "lab_unreviewed",
+                "title": f"Lab result: {lab.provider} — {lab.result_date or 'unknown date'}",
+                "flagged_count": len(flagged),
+                "result_date": lab.result_date or "",
+                "id": lab.id,
+            })
+
         # Sort attention items by urgency
         attention.sort(key=lambda x: x.get("days_until", 999))
 
@@ -124,6 +138,7 @@ class MorningService:
                 "bills_due_count": len(bills_this_week),
                 "deadlines_count": len(upcoming_deadlines),
                 "subscriptions_monthly_cents": self.subscriptions.get_summary()["monthly_total_cents"],
+                "health_flagged_markers": len(self.lab.markers.get_all_flagged()),
             },
             "accounts_snapshot": acct_snapshot,
             "cards_snapshot": card_snapshot,

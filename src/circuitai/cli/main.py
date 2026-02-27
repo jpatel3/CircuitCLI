@@ -157,3 +157,6 @@ cli.add_command(browse)
 
 from circuitai.cli.subscriptions_cmd import subscriptions
 cli.add_command(subscriptions)
+
+from circuitai.cli.health_cmd import health
+cli.add_command(health)
