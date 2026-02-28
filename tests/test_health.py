@@ -589,6 +589,171 @@ class TestLabServiceCrud:
             assert m.flag in ("high", "low", "critical")
 
 
+# ── Trends tests ─────────────────────────────────────────────
+
+
+def _seed_multi_date_results(lab_svc):
+    """Import 3 results on different dates with overlapping Cholesterol marker."""
+    dates = [
+        ("2024-01-15", "180", "normal"),
+        ("2024-06-20", "205", "high"),
+        ("2025-01-10", "165", "normal"),
+    ]
+    for result_date, chol_val, chol_flag in dates:
+        data = {
+            "patient_name": "John Patel",
+            "provider": "LabCorp",
+            "result_date": result_date,
+            "panels": [{
+                "panel_name": "Lipid Panel",
+                "markers": [
+                    {"marker_name": "Cholesterol, Total", "value": chol_val, "unit": "mg/dL",
+                     "reference_low": "100", "reference_high": "199", "flag": chol_flag},
+                    {"marker_name": "HDL", "value": "50", "unit": "mg/dL",
+                     "reference_low": "40", "reference_high": "", "flag": "normal"},
+                ],
+            }],
+        }
+        lab_svc.import_lab_data(data, source="pdf")
+
+
+class TestMarkerHistory:
+    def test_get_marker_history(self, lab_svc):
+        _seed_multi_date_results(lab_svc)
+        history = lab_svc.markers.get_marker_history("Cholesterol, Total")
+        assert len(history) == 3
+        # Ordered by date ASC
+        assert history[0]["result_date"] == "2024-01-15"
+        assert history[0]["value"] == "180"
+        assert history[2]["result_date"] == "2025-01-10"
+        assert history[2]["value"] == "165"
+
+    def test_get_marker_history_empty(self, lab_svc):
+        history = lab_svc.markers.get_marker_history("Nonexistent Marker")
+        assert history == []
+
+    def test_list_distinct_names(self, lab_svc):
+        _seed_multi_date_results(lab_svc)
+        names = lab_svc.markers.list_distinct_names()
+        assert "Cholesterol, Total" in names
+        assert "HDL" in names
+        # Should be alphabetically sorted
+        assert names == sorted(names)
+
+    def test_list_distinct_names_empty(self, lab_svc):
+        names = lab_svc.markers.list_distinct_names()
+        assert names == []
+
+    def test_excludes_inactive_results(self, lab_svc):
+        _seed_multi_date_results(lab_svc)
+        results = lab_svc.list_results()
+        # Delete the first result
+        lab_svc.delete_result(results[-1].id)
+        history = lab_svc.markers.get_marker_history("Cholesterol, Total")
+        assert len(history) == 2
+
+
+class TestMarkerTrends:
+    def test_get_marker_trends(self, lab_svc):
+        _seed_multi_date_results(lab_svc)
+        trends = lab_svc.get_marker_trends("Cholesterol, Total")
+        assert trends["marker_name"] == "Cholesterol, Total"
+        assert trends["unit"] == "mg/dL"
+        assert trends["count"] == 3
+        assert len(trends["data_points"]) == 3
+
+    def test_trends_change_calculation(self, lab_svc):
+        _seed_multi_date_results(lab_svc)
+        trends = lab_svc.get_marker_trends("Cholesterol, Total")
+        pts = trends["data_points"]
+        # First point has no change
+        assert pts[0]["change"] is None
+        # Second: 205 - 180 = 25
+        assert pts[1]["change"] == 25.0
+        # Third: 165 - 205 = -40
+        assert pts[2]["change"] == -40.0
+
+    def test_trends_change_pct(self, lab_svc):
+        _seed_multi_date_results(lab_svc)
+        trends = lab_svc.get_marker_trends("Cholesterol, Total")
+        pts = trends["data_points"]
+        # 25/180 * 100 ≈ 13.89%
+        assert pts[1]["change_pct"] == pytest.approx(13.889, abs=0.01)
+
+    def test_trends_empty(self, lab_svc):
+        trends = lab_svc.get_marker_trends("Nonexistent")
+        assert trends["count"] == 0
+        assert trends["data_points"] == []
+
+    def test_list_marker_names(self, lab_svc):
+        _seed_multi_date_results(lab_svc)
+        names = lab_svc.list_marker_names()
+        assert "Cholesterol, Total" in names
+        assert "HDL" in names
+
+
+class TestTrendsCli:
+    def _invoke(self, args, db):
+        from circuitai.cli.main import cli, CircuitContext
+
+        runner = CliRunner()
+        with patch.object(CircuitContext, "get_db", return_value=db):
+            return runner.invoke(cli, ["health"] + args, catch_exceptions=False)
+
+    def test_trends_with_marker_name(self, db, lab_svc):
+        _seed_multi_date_results(lab_svc)
+        result = self._invoke(["trends", "Cholesterol, Total"], db)
+        assert result.exit_code == 0
+        assert "Cholesterol, Total" in result.output
+        assert "180" in result.output
+        assert "205" in result.output
+        assert "165" in result.output
+
+    def test_trends_json_output(self, db, lab_svc):
+        _seed_multi_date_results(lab_svc)
+        result = self._invoke(["--json", "trends", "Cholesterol, Total"], db)
+        assert result.exit_code == 0
+        import json
+        envelope = json.loads(result.output)
+        data = envelope["data"]
+        assert data["marker_name"] == "Cholesterol, Total"
+        assert data["count"] == 3
+        assert len(data["data_points"]) == 3
+
+    def test_trends_empty_marker(self, db, lab_svc):
+        _seed_multi_date_results(lab_svc)
+        result = self._invoke(["trends", "Nonexistent Marker"], db)
+        assert result.exit_code == 0
+        assert "No data found" in result.output
+
+    def test_trends_no_data_at_all(self, db):
+        result = self._invoke(["trends", "WBC"], db)
+        assert result.exit_code == 0
+        assert "No data found" in result.output
+
+    def test_trends_json_requires_argument(self, db, lab_svc):
+        _seed_multi_date_results(lab_svc)
+        result = self._invoke(["--json", "trends"], db)
+        assert result.exit_code == 0
+        assert "required" in result.output.lower() or "error" in result.output.lower()
+
+    def test_trends_shows_change_indicators(self, db, lab_svc):
+        _seed_multi_date_results(lab_svc)
+        result = self._invoke(["trends", "Cholesterol, Total"], db)
+        assert result.exit_code == 0
+        # Should have +25 and -40 changes
+        assert "+25" in result.output
+        assert "-40" in result.output
+
+    def test_trends_shows_summary_footer(self, db, lab_svc):
+        _seed_multi_date_results(lab_svc)
+        result = self._invoke(["trends", "Cholesterol, Total"], db)
+        assert result.exit_code == 0
+        assert "3 data points" in result.output
+        assert "Range:" in result.output
+        assert "Latest:" in result.output
+
+
 # ── CLI tests ─────────────────────────────────────────────────
 
 

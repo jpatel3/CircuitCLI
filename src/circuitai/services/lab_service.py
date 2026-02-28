@@ -730,6 +730,43 @@ class LabService:
         """Soft-delete a lab result."""
         self.results.soft_delete(result_id)
 
+    def get_marker_trends(self, marker_name: str) -> dict[str, Any]:
+        """Get trend data for a specific marker across all results."""
+        history = self.markers.get_marker_history(marker_name)
+        if not history:
+            return {"marker_name": marker_name, "data_points": [], "count": 0}
+
+        # Compute changes between consecutive values
+        data_points = []
+        for i, row in enumerate(history):
+            point = {**row}
+            if i > 0:
+                try:
+                    curr = float(row["value"].strip("<>= "))
+                    prev = float(history[i - 1]["value"].strip("<>= "))
+                    point["change"] = curr - prev
+                    point["change_pct"] = ((curr - prev) / prev * 100) if prev else None
+                except (ValueError, ZeroDivisionError):
+                    point["change"] = None
+                    point["change_pct"] = None
+            else:
+                point["change"] = None
+                point["change_pct"] = None
+            data_points.append(point)
+
+        return {
+            "marker_name": marker_name,
+            "unit": history[0]["unit"],
+            "reference_low": history[0]["reference_low"],
+            "reference_high": history[0]["reference_high"],
+            "data_points": data_points,
+            "count": len(data_points),
+        }
+
+    def list_marker_names(self) -> list[str]:
+        """Get all unique marker names across active results."""
+        return self.markers.list_distinct_names()
+
     def get_summary(self) -> dict[str, Any]:
         """Overview stats for health summary."""
         total = self.results.count("is_active = 1")

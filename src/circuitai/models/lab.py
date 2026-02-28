@@ -163,3 +163,28 @@ class LabMarkerRepository(BaseRepository):
             "ORDER BY r.result_date DESC, m.marker_name",
         )
         return [LabMarker.from_row(r) for r in rows]
+
+    def get_marker_history(self, marker_name: str) -> list[dict]:
+        """Get all values of a marker across results, ordered by date."""
+        rows = self.db.fetchall(
+            "SELECT m.value, m.unit, m.flag, m.reference_low, m.reference_high, "
+            "r.result_date, r.provider "
+            "FROM lab_markers m "
+            "JOIN lab_panels p ON m.lab_panel_id = p.id "
+            "JOIN lab_results r ON p.lab_result_id = r.id "
+            "WHERE m.marker_name = ? AND r.is_active = 1 "
+            "ORDER BY r.result_date ASC",
+            (marker_name,),
+        )
+        return [dict(r) for r in rows]
+
+    def list_distinct_names(self) -> list[str]:
+        """Get all unique marker names across active results."""
+        rows = self.db.fetchall(
+            "SELECT DISTINCT m.marker_name FROM lab_markers m "
+            "JOIN lab_panels p ON m.lab_panel_id = p.id "
+            "JOIN lab_results r ON p.lab_result_id = r.id "
+            "WHERE r.is_active = 1 "
+            "ORDER BY m.marker_name",
+        )
+        return [r["marker_name"] for r in rows]

@@ -257,6 +257,191 @@ def health_flagged(ctx: CircuitContext) -> None:
     )
 
 
+@health.command("trends")
+@click.argument("marker_name", required=False)
+@pass_context
+def health_trends(ctx: CircuitContext, marker_name: str | None) -> None:
+    """Track a marker's values over time across all lab results."""
+    from circuitai.services.lab_service import LabService
+
+    db = ctx.get_db()
+    svc = LabService(db)
+
+    if not marker_name:
+        names = svc.list_marker_names()
+        if not names:
+            if ctx.json_mode:
+                ctx.formatter.json([])
+            else:
+                ctx.formatter.info("No lab markers found. Import lab results first.")
+            return
+
+        if ctx.json_mode:
+            ctx.formatter.json_error("MARKER_NAME argument is required in JSON mode.")
+            return
+
+        # Numbered picker with search prompt
+        ctx.formatter.print(f"\n[bold]Select a marker ({len(names)} available):[/bold]")
+        for i, name in enumerate(names, 1):
+            ctx.formatter.print(f"  {i:3d}. {name}")
+
+        ctx.formatter.print()
+        choice_raw = click.prompt("Number or search text", type=str)
+
+        # Try as number first
+        try:
+            idx = int(choice_raw) - 1
+            if 0 <= idx < len(names):
+                marker_name = names[idx]
+            else:
+                ctx.formatter.error("Invalid selection.")
+                return
+        except ValueError:
+            # Fuzzy search: find names containing the search text
+            search = choice_raw.lower()
+            matches = [n for n in names if search in n.lower()]
+            if len(matches) == 1:
+                marker_name = matches[0]
+            elif len(matches) > 1:
+                ctx.formatter.print(f"\n[bold]Matches for '{choice_raw}':[/bold]")
+                for i, name in enumerate(matches, 1):
+                    ctx.formatter.print(f"  {i}. {name}")
+                idx = click.prompt("Number", type=int) - 1
+                if 0 <= idx < len(matches):
+                    marker_name = matches[idx]
+                else:
+                    ctx.formatter.error("Invalid selection.")
+                    return
+            else:
+                ctx.formatter.error(f"No markers matching '{choice_raw}'.")
+                return
+
+    trends = svc.get_marker_trends(marker_name)
+
+    if ctx.json_mode:
+        ctx.formatter.json(trends)
+        return
+
+    if not trends["data_points"]:
+        ctx.formatter.info(f"No data found for '{marker_name}'.")
+        return
+
+    _print_trends(ctx, trends)
+
+
+def _print_trends(ctx: CircuitContext, trends: dict) -> None:
+    """Print marker trend table with change indicators."""
+    from datetime import datetime
+
+    name = trends["marker_name"]
+    unit = trends.get("unit", "")
+    ref_low = trends.get("reference_low", "")
+    ref_high = trends.get("reference_high", "")
+    points = trends["data_points"]
+
+    # Header line
+    header = f"[bold]{name}[/bold]"
+    if unit:
+        header += f" — {unit}"
+    if ref_low and ref_high:
+        header += f" (ref: {ref_low} - {ref_high})"
+    elif ref_low:
+        header += f" (ref: >= {ref_low})"
+    elif ref_high:
+        header += f" (ref: < {ref_high})"
+
+    ctx.formatter.print(f"\n{header}\n")
+
+    rows = []
+    for pt in points:
+        date_str = format_date(pt.get("result_date"))
+        value = pt["value"]
+        flag = pt.get("flag", "normal")
+
+        # Format change
+        change = pt.get("change")
+        if change is not None:
+            sign = "+" if change > 0 else ""
+            # Format as integer if whole number, else 1 decimal
+            if change == int(change):
+                change_str = f"{sign}{int(change)}"
+            else:
+                change_str = f"{sign}{change:.1f}"
+        else:
+            change_str = ""
+
+        # Flag indicator
+        flag_str = ""
+        if flag == "high":
+            flag_str = "[red]HIGH \u25b2[/red]"
+        elif flag == "low":
+            flag_str = "[blue]LOW \u25bc[/blue]"
+        elif flag == "critical":
+            flag_str = "[bold red]CRITICAL[/bold red]"
+
+        rows.append([date_str, value, change_str, flag_str])
+
+    ctx.formatter.table(
+        title=f"{name} — Trend",
+        columns=[
+            ("Date", "cyan"),
+            ("Value", "bold"),
+            ("Change", ""),
+            ("Flag", ""),
+        ],
+        rows=rows,
+    )
+
+    # Summary footer
+    count = len(points)
+    numeric_values = []
+    for pt in points:
+        try:
+            numeric_values.append(float(pt["value"].strip("<>= ")))
+        except ValueError:
+            pass
+
+    first_date = points[0].get("result_date", "")
+    last_date = points[-1].get("result_date", "")
+
+    # Compute span in years
+    span_str = ""
+    if first_date and last_date and first_date != last_date:
+        try:
+            d1 = datetime.fromisoformat(first_date)
+            d2 = datetime.fromisoformat(last_date)
+            years = (d2 - d1).days / 365.25
+            span_str = f" over {years:.1f} years"
+        except (ValueError, TypeError):
+            pass
+
+    ctx.formatter.print(f"\n  {count} data points{span_str}")
+
+    if numeric_values:
+        lo, hi = min(numeric_values), max(numeric_values)
+        if lo == int(lo):
+            lo = int(lo)
+        if hi == int(hi):
+            hi = int(hi)
+        ctx.formatter.print(f"  Range: {lo} \u2014 {hi}")
+
+        # Latest value with status
+        latest = points[-1]
+        latest_val = latest["value"]
+        latest_flag = latest.get("flag", "normal")
+        if latest_flag == "normal":
+            status = "[green](normal)[/green]"
+        elif latest_flag == "high":
+            status = "[red](high)[/red]"
+        elif latest_flag == "low":
+            status = "[blue](low)[/blue]"
+        else:
+            status = f"({latest_flag})"
+        ctx.formatter.print(f"  Latest: {latest_val} {status}")
+
+    ctx.formatter.print()
+
+
 @health.command("summary")
 @pass_context
 def health_summary(ctx: CircuitContext) -> None:
