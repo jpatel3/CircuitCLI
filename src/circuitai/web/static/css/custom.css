@@ -1,0 +1,266 @@
+/* CircuitAI Web Dashboard — custom styles on top of Pico CSS */
+
+/* Layout: sidebar + content */
+.layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 220px;
+    min-width: 220px;
+    background: var(--pico-card-background-color);
+    border-right: 1px solid var(--pico-muted-border-color);
+    padding: 1rem;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar nav {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.sidebar nav header {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--pico-muted-border-color);
+    margin-bottom: 1rem;
+}
+
+.sidebar nav footer {
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid var(--pico-muted-border-color);
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar ul li {
+    margin-bottom: 0.25rem;
+}
+
+.sidebar ul li a {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    text-decoration: none;
+    color: var(--pico-muted-color);
+    transition: background 0.15s, color 0.15s;
+}
+
+.sidebar ul li a:hover {
+    background: var(--pico-primary-background);
+    color: var(--pico-primary-inverse);
+}
+
+.sidebar ul li a.active {
+    background: var(--pico-primary-background);
+    color: var(--pico-primary-inverse);
+    font-weight: 600;
+}
+
+.sidebar ul li a.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.brand {
+    font-size: 1.25rem;
+    color: var(--pico-primary);
+}
+
+.content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 1200px;
+    overflow-y: auto;
+}
+
+/* Summary cards grid */
+.grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.two-col {
+    grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 768px) {
+    .layout {
+        flex-direction: column;
+    }
+    .sidebar {
+        width: 100%;
+        min-width: 100%;
+        height: auto;
+        position: relative;
+    }
+    .sidebar ul {
+        display: flex;
+        gap: 0.5rem;
+    }
+    .two-col {
+        grid-template-columns: 1fr;
+    }
+}
+
+.summary-card {
+    text-align: center;
+    margin-bottom: 0;
+}
+
+.summary-card header {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--pico-muted-color);
+}
+
+.big-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0;
+}
+
+.big-number.warn {
+    color: var(--pico-color-orange-500, #f0883e);
+}
+
+.big-number.danger {
+    color: var(--pico-del-color, #f85149);
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.badge.completed {
+    background: var(--pico-primary-background);
+    color: var(--pico-primary-inverse);
+}
+
+.badge.reviewed {
+    background: #238636;
+    color: #fff;
+}
+
+.badge.pending {
+    background: #30363d;
+    color: #8b949e;
+}
+
+.badge.normal {
+    background: #1f352a;
+    color: #3fb950;
+}
+
+.badge.high, .badge.flagged {
+    background: #3d1f20;
+    color: #f85149;
+}
+
+.badge.low {
+    background: #3d2e1f;
+    color: #f0883e;
+}
+
+.badge.critical {
+    background: #5c1f1f;
+    color: #ff7b72;
+}
+
+.badge.abnormal {
+    background: #3d2e1f;
+    color: #f0883e;
+}
+
+/* Flagged row highlight */
+.flagged-row {
+    border-left: 3px solid #f85149;
+}
+
+/* Result header layout */
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.result-header .badge {
+    font-size: 0.85rem;
+    padding: 0.25rem 0.75rem;
+}
+
+button.small, .small {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8rem;
+}
+
+/* Marker list */
+.marker-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.marker-list li {
+    margin-bottom: 0.15rem;
+}
+
+.marker-list li a {
+    display: block;
+    padding: 0.35rem 0.6rem;
+    border-radius: 0.25rem;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.marker-list li a:hover,
+.marker-list li a.active {
+    background: var(--pico-primary-background);
+    color: var(--pico-primary-inverse);
+}
+
+/* Login page */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.login-card {
+    max-width: 400px;
+    width: 100%;
+}
+
+.error-message {
+    color: var(--pico-del-color, #f85149);
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    background: rgba(248, 81, 73, 0.1);
+    border-radius: 0.375rem;
+}

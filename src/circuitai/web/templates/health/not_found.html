@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% set active_nav = "health" %}
+
+{% block title %}Not Found — CircuitAI{% endblock %}
+
+{% block content %}
+<header>
+    <nav aria-label="breadcrumb">
+        <ul>
+            <li><a href="/health">Health</a></li>
+            <li>Not Found</li>
+        </ul>
+    </nav>
+</header>
+
+<article>
+    <h2>Not Found</h2>
+    <p>{{ message }}</p>
+    <a href="/health" role="button" class="outline">Back to Dashboard</a>
+</article>
+{% endblock %}

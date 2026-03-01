@@ -160,3 +160,6 @@ cli.add_command(subscriptions)
 
 from circuitai.cli.health_cmd import health
 cli.add_command(health)
+
+from circuitai.cli.serve_cmd import serve
+cli.add_command(serve)

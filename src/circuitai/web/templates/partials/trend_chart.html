@@ -1,0 +1,115 @@
+{% if trends and trends.data_points %}
+<canvas id="trendChart" style="max-height: 350px;"></canvas>
+<script>
+(function() {
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    const dates = {{ trends.data_points | map(attribute='result_date') | list | tojson }};
+    const values = {{ trends.data_points | map(attribute='value') | list | tojson }};
+    const numValues = values.map(v => parseFloat(v)).filter(v => !isNaN(v));
+    const numDates = dates.slice(dates.length - numValues.length);
+
+    // Reference range from top-level trends dict
+    const refLow = {{ trends.reference_low | tojson }};
+    const refHigh = {{ trends.reference_high | tojson }};
+
+    const datasets = [{
+        label: '{{ marker_name }}',
+        data: numValues,
+        borderColor: '#58a6ff',
+        backgroundColor: 'rgba(88, 166, 255, 0.1)',
+        tension: 0.3,
+        fill: false,
+        pointRadius: 5,
+        pointHoverRadius: 8,
+    }];
+
+    // Add reference range band if available
+    if (refLow && refHigh) {
+        const low = parseFloat(refLow);
+        const high = parseFloat(refHigh);
+        if (!isNaN(low) && !isNaN(high)) {
+            datasets.push({
+                label: 'Reference High',
+                data: numDates.map(() => high),
+                borderColor: 'rgba(63, 185, 80, 0.3)',
+                borderDash: [5, 5],
+                pointRadius: 0,
+                fill: '+1',
+                backgroundColor: 'rgba(63, 185, 80, 0.08)',
+            });
+            datasets.push({
+                label: 'Reference Low',
+                data: numDates.map(() => low),
+                borderColor: 'rgba(63, 185, 80, 0.3)',
+                borderDash: [5, 5],
+                pointRadius: 0,
+                fill: false,
+            });
+        }
+    }
+
+    if (window._trendChart) window._trendChart.destroy();
+    window._trendChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: numDates, datasets: datasets },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { labels: { color: '#c9d1d9' } },
+            },
+            scales: {
+                x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
+                y: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
+            },
+        },
+    });
+})();
+</script>
+
+<figure>
+    <table role="grid">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Value</th>
+                <th>Unit</th>
+                <th>Reference</th>
+                <th>Flag</th>
+                <th>Change</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in trends.data_points %}
+            <tr>
+                <td>{{ entry.result_date or "—" }}</td>
+                <td><strong>{{ entry.value }}</strong></td>
+                <td>{{ entry.unit or "" }}</td>
+                <td>
+                    {% if entry.reference_low and entry.reference_high %}
+                    {{ entry.reference_low }} - {{ entry.reference_high }}
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+                <td>
+                    {% if entry.flag and entry.flag != "normal" %}
+                    <span class="badge {{ entry.flag }}">{{ entry.flag }}</span>
+                    {% else %}
+                    normal
+                    {% endif %}
+                </td>
+                <td>
+                    {% if entry.change is not none %}
+                    {{ "%.2f" | format(entry.change) }}
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</figure>
+{% else %}
+<p>No data available.</p>
+{% endif %}

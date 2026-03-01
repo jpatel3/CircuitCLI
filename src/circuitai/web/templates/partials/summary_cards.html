@@ -1,0 +1,29 @@
+<div id="summary-cards" class="grid">
+    <article class="summary-card">
+        <header>Total Results</header>
+        <p class="big-number">{{ summary.get("total_results", 0) }}</p>
+    </article>
+    <article class="summary-card">
+        <header>Unreviewed</header>
+        <p class="big-number {% if summary.get('unreviewed_count', 0) > 0 %}warn{% endif %}">
+            {{ summary.get("unreviewed_count", 0) }}
+        </p>
+    </article>
+    <article class="summary-card">
+        <header>Flagged Markers</header>
+        <p class="big-number {% if summary.get('flagged_marker_count', 0) > 0 %}danger{% endif %}">
+            {{ summary.get("flagged_marker_count", 0) }}
+        </p>
+    </article>
+    <article class="summary-card">
+        <header>
+            <span>Refresh</span>
+        </header>
+        <button hx-get="/health/partials/health-summary"
+                hx-target="#summary-cards"
+                hx-swap="outerHTML"
+                class="outline secondary">
+            Refresh
+        </button>
+    </article>
+</div>

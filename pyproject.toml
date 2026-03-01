@@ -38,8 +38,9 @@ pdf = ["pdfplumber>=0.9"]
 plaid = ["plaid-python>=29.0"]
 capture = ["anthropic>=0.40"]
 browser = ["playwright>=1.40"]
+web = ["fastapi>=0.115", "uvicorn[standard]>=0.30", "jinja2>=3.1", "python-multipart>=0.0.9", "itsdangerous>=2.2"]
 dev = ["ruff", "mypy", "pytest", "pytest-cov"]
-all = ["circuitai[crypto,calendar,pdf,plaid,capture,browser,dev]"]
+all = ["circuitai[crypto,calendar,pdf,plaid,capture,browser,web,dev]"]
 
 [project.scripts]
 circuit = "circuitai.cli.main:cli"

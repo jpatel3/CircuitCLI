@@ -1,0 +1,9 @@
+{% if markers %}
+<ul class="marker-list">
+    {% for name in markers %}
+    <li><a href="/health/trends/{{ name | urlencode }}">{{ name }}</a></li>
+    {% endfor %}
+</ul>
+{% else %}
+<p><small>No markers found.</small></p>
+{% endif %}

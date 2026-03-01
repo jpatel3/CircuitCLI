@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% set active_nav = "health" %}
+
+{% block title %}Lab Result — CircuitAI{% endblock %}
+
+{% block content %}
+{% set result = detail.result %}
+<header>
+    <nav aria-label="breadcrumb">
+        <ul>
+            <li><a href="/health">Health</a></li>
+            <li>{{ result.result_date or result.order_date or "Lab Result" }}</li>
+        </ul>
+    </nav>
+</header>
+
+<article>
+    <header>
+        <div class="result-header">
+            <div>
+                <h2>{{ result.provider or "Lab Result" }}</h2>
+                <p>
+                    {% if result.result_date %}Date: {{ result.result_date }}{% endif %}
+                    {% if result.ordering_physician %} &middot; Dr. {{ result.ordering_physician }}{% endif %}
+                    {% if result.patient_name %} &middot; {{ result.patient_name }}{% endif %}
+                </p>
+            </div>
+            <div>
+                <span class="badge {{ result.status }}" id="status-badge">{{ result.status }}</span>
+                {% if result.status != "reviewed" %}
+                <button hx-post="/health/results/{{ result.id }}/review"
+                        hx-target="#status-badge"
+                        hx-swap="outerHTML"
+                        class="outline small">
+                    Mark Reviewed
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    {% for panel in detail.panels %}
+    <details open>
+        <summary>
+            <strong>{{ panel.panel.panel_name }}</strong>
+            <span class="badge {{ panel.panel.status }}">{{ panel.panel.status }}</span>
+            <small>{{ panel.markers | length }} markers</small>
+        </summary>
+        <figure>
+            <table role="grid">
+                <thead>
+                    <tr>
+                        <th>Marker</th>
+                        <th>Value</th>
+                        <th>Unit</th>
+                        <th>Reference Range</th>
+                        <th>Flag</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for marker in panel.markers %}
+                    <tr class="{% if marker.flag != 'normal' %}flagged-row{% endif %}">
+                        <td>
+                            <a href="/health/trends/{{ marker.marker_name | urlencode }}">
+                                {{ marker.marker_name }}
+                            </a>
+                        </td>
+                        <td><strong>{{ marker.value }}</strong></td>
+                        <td>{{ marker.unit }}</td>
+                        <td>{{ marker.reference_range }}</td>
+                        <td>
+                            {% if marker.flag != "normal" %}
+                            <span class="badge {{ marker.flag }}">{{ marker.flag }}</span>
+                            {% else %}
+                            <span class="badge normal">normal</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </figure>
+    </details>
+    {% endfor %}
+</article>
+{% endblock %}

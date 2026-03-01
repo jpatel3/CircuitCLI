@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% set active_nav = "health" %}
+
+{% block title %}{{ marker_name }} Trends — CircuitAI{% endblock %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<header>
+    <nav aria-label="breadcrumb">
+        <ul>
+            <li><a href="/health">Health</a></li>
+            <li>Trends</li>
+            <li>{{ marker_name }}</li>
+        </ul>
+    </nav>
+</header>
+
+<div class="grid two-col">
+    <section>
+        <h2>{{ marker_name }}</h2>
+        {% if trends and trends.data_points %}
+        <div id="trend-chart-container">
+            {% include "partials/trend_chart.html" %}
+        </div>
+        {% else %}
+        <p>No trend data available for this marker.</p>
+        {% endif %}
+    </section>
+
+    <section>
+        <h3>Switch Marker</h3>
+        <input type="search"
+               name="q"
+               placeholder="Search markers..."
+               hx-get="/health/partials/marker-search"
+               hx-trigger="keyup changed delay:300ms"
+               hx-target="#marker-picker">
+        <div id="marker-picker">
+            <ul class="marker-list">
+                {% for name in marker_names %}
+                <li>
+                    <a href="/health/trends/{{ name | urlencode }}"
+                       {% if name == marker_name %}class="active"{% endif %}>
+                        {{ name }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </section>
+</div>
+{% endblock %}

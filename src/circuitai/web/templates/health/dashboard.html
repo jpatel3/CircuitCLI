@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% set active_nav = "health" %}
+
+{% block title %}Health Dashboard — CircuitAI{% endblock %}
+
+{% block content %}
+<header>
+    <h1>Health Dashboard</h1>
+    <p>Lab results, markers, and trends.</p>
+</header>
+
+<!-- Summary Cards -->
+<div id="summary-cards" class="grid">
+    <article class="summary-card">
+        <header>Total Results</header>
+        <p class="big-number">{{ summary.get("total_results", 0) }}</p>
+    </article>
+    <article class="summary-card">
+        <header>Unreviewed</header>
+        <p class="big-number {% if summary.get('unreviewed_count', 0) > 0 %}warn{% endif %}">
+            {{ summary.get("unreviewed_count", 0) }}
+        </p>
+    </article>
+    <article class="summary-card">
+        <header>Flagged Markers</header>
+        <p class="big-number {% if summary.get('flagged_marker_count', 0) > 0 %}danger{% endif %}">
+            {{ summary.get("flagged_marker_count", 0) }}
+        </p>
+    </article>
+    <article class="summary-card">
+        <header>
+            <span>Refresh</span>
+        </header>
+        <button hx-get="/health/partials/health-summary"
+                hx-target="#summary-cards"
+                hx-swap="outerHTML"
+                class="outline secondary">
+            Refresh
+        </button>
+    </article>
+</div>
+
+<div class="grid two-col">
+    <!-- Recent Results -->
+    <section>
+        <h2>Recent Results</h2>
+        {% if results %}
+        <figure>
+            <table role="grid">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Provider</th>
+                        <th>Status</th>
+                        <th>Panels</th>
+                        <th>Flagged</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in results %}
+                    <tr>
+                        <td>
+                            <a href="/health/results/{{ item.result.id }}">
+                                {{ item.result.result_date or item.result.order_date or "—" }}
+                            </a>
+                        </td>
+                        <td>{{ item.result.provider or "—" }}</td>
+                        <td>
+                            <span class="badge {{ item.result.status }}">{{ item.result.status }}</span>
+                        </td>
+                        <td>{{ item.panel_count }}</td>
+                        <td>
+                            {% if item.flagged_count > 0 %}
+                            <span class="badge flagged">{{ item.flagged_count }}</span>
+                            {% else %}
+                            0
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </figure>
+        {% else %}
+        <p>No lab results yet. Import a PDF with <code>circuit health import-lab</code>.</p>
+        {% endif %}
+    </section>
+
+    <!-- Right Column -->
+    <section>
+        <!-- Flagged Markers -->
+        <h2>Flagged Markers</h2>
+        {% if all_flagged %}
+        <figure>
+            <table role="grid">
+                <thead>
+                    <tr>
+                        <th>Marker</th>
+                        <th>Value</th>
+                        <th>Flag</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in all_flagged %}
+                    <tr>
+                        <td>{{ m.marker_name }}</td>
+                        <td>{{ m.value }} {{ m.unit }}</td>
+                        <td><span class="badge {{ m.flag }}">{{ m.flag }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </figure>
+        {% else %}
+        <p>No flagged markers.</p>
+        {% endif %}
+
+        <!-- Marker Search -->
+        <h3>Search Markers</h3>
+        <input type="search"
+               name="q"
+               placeholder="Search markers..."
+               hx-get="/health/partials/marker-search"
+               hx-trigger="keyup changed delay:300ms"
+               hx-target="#marker-search-results">
+        <div id="marker-search-results">
+            {% if marker_names %}
+            <ul class="marker-list">
+                {% for name in marker_names %}
+                <li><a href="/health/trends/{{ name | urlencode }}">{{ name }}</a></li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}

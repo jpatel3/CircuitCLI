@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}CircuitAI{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2/dist/htmx.min.js"></script>
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <nav>
+                <header>
+                    <strong class="brand">CircuitAI</strong>
+                </header>
+                <ul>
+                    <li><a href="/health" class="{% if active_nav == 'health' %}active{% endif %}">Health</a></li>
+                    <li><a href="#" class="disabled" aria-disabled="true">Finance</a></li>
+                    <li><a href="#" class="disabled" aria-disabled="true">Subscriptions</a></li>
+                    <li><a href="#" class="disabled" aria-disabled="true">Utilities</a></li>
+                </ul>
+                <footer>
+                    <small><a href="/auth/logout">Logout</a></small>
+                </footer>
+            </nav>
+        </aside>
+        <main class="content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>
