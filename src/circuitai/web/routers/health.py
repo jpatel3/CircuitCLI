@@ -40,9 +40,15 @@ async def health_dashboard(
             "flagged_count": len(flagged),
         })
 
-    from circuitai.models.lab import LabMarkerRepository
-    marker_repo = LabMarkerRepository(lab_svc.markers.db)
-    all_flagged = marker_repo.get_all_flagged()
+    # Enrich flagged markers with result dates for the dashboard display
+    flagged_rows = lab_svc.markers.db.fetchall(
+        "SELECT m.*, r.result_date FROM lab_markers m "
+        "JOIN lab_panels p ON m.lab_panel_id = p.id "
+        "JOIN lab_results r ON p.lab_result_id = r.id "
+        "WHERE m.flag != 'normal' AND r.status != 'reviewed' AND r.is_active = 1 "
+        "ORDER BY r.result_date DESC, m.marker_name",
+    )
+    all_flagged = [dict(r) for r in flagged_rows]
 
     marker_names = lab_svc.list_marker_names()[:10]
 

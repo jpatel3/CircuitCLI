@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% set active_nav = "subscriptions" %}
+
+{% block title %}Add Subscription — CircuitAI{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ul>
+        <li><a href="/subscriptions">Subscriptions</a></li>
+        <li>Add</li>
+    </ul>
+</nav>
+
+<h1>Add Subscription</h1>
+
+<article>
+    <form method="post" action="/subscriptions/add">
+        <label for="name">
+            Name
+            <input type="text" id="name" name="name" placeholder="e.g. Netflix" required>
+        </label>
+
+        <label for="amount">
+            Amount ($)
+            <input type="number" id="amount" name="amount" step="0.01" min="0" value="0.00">
+        </label>
+
+        <label for="frequency">
+            Frequency
+            <select id="frequency" name="frequency">
+                <option value="weekly">Weekly</option>
+                <option value="monthly" selected>Monthly</option>
+                <option value="quarterly">Quarterly</option>
+                <option value="yearly">Yearly</option>
+            </select>
+        </label>
+
+        <label for="category">
+            Category
+            <input type="text" id="category" name="category" placeholder="e.g. streaming" value="other">
+        </label>
+
+        <label for="notes">
+            Notes
+            <textarea id="notes" name="notes" placeholder="Optional notes..."></textarea>
+        </label>
+
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="submit">Add Subscription</button>
+            <a href="/subscriptions" role="button" class="outline secondary">Cancel</a>
+        </div>
+    </form>
+</article>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% if subscriptions %}
+<figure>
+    <table role="grid">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Amount</th>
+                <th>Frequency</th>
+                <th>Next Charge</th>
+                <th>Status</th>
+                <th>Confidence</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sub in subscriptions %}
+            <tr>
+                <td><a href="/subscriptions/{{ sub.id }}">{{ sub.name }}</a></td>
+                <td>${{ "%.2f" | format(sub.amount_cents / 100) }}</td>
+                <td>{{ sub.frequency }}</td>
+                <td>{{ sub.next_charge_date or "—" }}</td>
+                <td><span class="badge {{ sub.status }}">{{ sub.status }}</span></td>
+                <td><span class="badge confidence-{{ 'high' if sub.confidence >= 80 else ('medium' if sub.confidence >= 60 else 'low') }}">{{ sub.confidence }}%</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</figure>
+{% else %}
+<p>No subscriptions match your search.</p>
+{% endif %}

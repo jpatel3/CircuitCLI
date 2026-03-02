@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% set active_nav = "subscriptions" %}
+
+{% block title %}{{ sub.name }} — CircuitAI{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ul>
+        <li><a href="/subscriptions">Subscriptions</a></li>
+        <li>{{ sub.name }}</li>
+    </ul>
+</nav>
+
+<div class="result-header">
+    <div>
+        <h1>{{ sub.name }}</h1>
+        <p>{{ sub.provider }}</p>
+    </div>
+    <span class="badge {{ sub.status }}" id="status-badge">{{ sub.status }}</span>
+</div>
+
+<div class="grid two-col">
+    <article>
+        <header>Details</header>
+        <table>
+            <tr><td><strong>Amount</strong></td><td>${{ "%.2f" | format(sub.amount_cents / 100) }}</td></tr>
+            <tr><td><strong>Frequency</strong></td><td>{{ sub.frequency }}</td></tr>
+            <tr><td><strong>Monthly Cost</strong></td><td>${{ "%.2f" | format(sub.monthly_cost_cents / 100) }}</td></tr>
+            <tr><td><strong>Yearly Cost</strong></td><td>${{ "%.2f" | format(sub.yearly_cost_cents / 100) }}</td></tr>
+            <tr><td><strong>Category</strong></td><td>{{ sub.category }}</td></tr>
+            <tr><td><strong>Source</strong></td><td>{{ sub.source }}</td></tr>
+            <tr><td><strong>Confidence</strong></td><td>{{ sub.confidence }}%</td></tr>
+        </table>
+    </article>
+    <article>
+        <header>Dates</header>
+        <table>
+            <tr><td><strong>Next Charge</strong></td><td>{{ sub.next_charge_date or "—" }}</td></tr>
+            <tr><td><strong>Last Charge</strong></td><td>{{ sub.last_charge_date or "—" }}</td></tr>
+            <tr><td><strong>First Detected</strong></td><td>{{ sub.first_detected or "—" }}</td></tr>
+            <tr><td><strong>Created</strong></td><td>{{ sub.created_at[:10] }}</td></tr>
+        </table>
+    </article>
+</div>
+
+{% if sub.notes %}
+<article>
+    <header>Notes</header>
+    <p>{{ sub.notes }}</p>
+</article>
+{% endif %}
+
+{% if sub.status != "cancelled" %}
+<div style="margin-top: 1rem;">
+    <form method="post" action="/subscriptions/{{ sub.id }}/cancel">
+        <button type="submit"
+                hx-post="/subscriptions/{{ sub.id }}/cancel"
+                hx-target="#status-badge"
+                hx-swap="outerHTML"
+                class="secondary outline">
+            Cancel Subscription
+        </button>
+    </form>
+</div>
+{% endif %}
+{% endblock %}

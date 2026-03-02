@@ -1,4 +1,4 @@
-"""Tests for web UI — FastAPI app, health dashboard, auth, HTMX partials."""
+"""Tests for web UI — FastAPI app, health dashboard, auth, subscriptions, HTMX partials."""
 
 import sqlite3
 import tempfile
@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from circuitai.core.database import DatabaseConnection
 from circuitai.core.migrations import initialize_database
 from circuitai.services.lab_service import LabService
+from circuitai.services.subscription_service import SubscriptionService
 from circuitai.web.app import create_app
 from circuitai.web.dependencies import get_db, require_auth
 
@@ -55,6 +56,11 @@ def db(db_path):
 @pytest.fixture
 def lab_svc(db):
     return LabService(db)
+
+
+@pytest.fixture
+def sub_svc(db):
+    return SubscriptionService(db)
 
 
 @pytest.fixture
@@ -361,5 +367,234 @@ class TestAuthRedirects:
         app = create_app()
         with TestClient(app, follow_redirects=False) as c:
             resp = c.get("/health/trends/WBC")
+            assert resp.status_code == 302
+            assert "/auth/login" in resp.headers["location"]
+
+
+# ── Subscription seed helper ─────────────────────────────────
+
+
+def _seed_subscription(sub_svc, name="Netflix", amount_cents=1599, frequency="monthly", category="streaming"):
+    """Add a subscription and return it."""
+    return sub_svc.add_subscription(
+        name=name,
+        amount_cents=amount_cents,
+        frequency=frequency,
+        category=category,
+        notes="Test subscription",
+    )
+
+
+def _seed_multiple_subscriptions(sub_svc):
+    """Add several subscriptions across categories."""
+    _seed_subscription(sub_svc, "Netflix", 1599, "monthly", "streaming")
+    _seed_subscription(sub_svc, "Spotify", 999, "monthly", "streaming")
+    _seed_subscription(sub_svc, "iCloud", 299, "monthly", "cloud")
+    return sub_svc.list_subscriptions(active_only=False)
+
+
+# ── Subscriptions dashboard tests ────────────────────────────
+
+
+class TestSubscriptionsDashboard:
+    def test_dashboard_empty(self, authenticated_client):
+        resp = authenticated_client.get("/subscriptions")
+        assert resp.status_code == 200
+        assert "Subscriptions" in resp.text
+        assert "No subscriptions yet" in resp.text
+
+    def test_dashboard_with_data(self, authenticated_client, sub_svc):
+        _seed_subscription(sub_svc)
+        resp = authenticated_client.get("/subscriptions")
+        assert resp.status_code == 200
+        assert "Netflix" in resp.text
+        assert "$15.99" in resp.text
+
+    def test_dashboard_summary_cards(self, authenticated_client, sub_svc):
+        _seed_multiple_subscriptions(sub_svc)
+        resp = authenticated_client.get("/subscriptions")
+        assert resp.status_code == 200
+        assert "Active" in resp.text
+        assert "Monthly Cost" in resp.text
+        assert "Yearly Cost" in resp.text
+        assert "Upcoming" in resp.text
+
+    def test_dashboard_shows_category_chart(self, authenticated_client, sub_svc):
+        _seed_multiple_subscriptions(sub_svc)
+        resp = authenticated_client.get("/subscriptions")
+        assert resp.status_code == 200
+        assert "categoryChart" in resp.text
+        assert "Cost by Category" in resp.text
+
+
+# ── Subscription detail tests ────────────────────────────────
+
+
+class TestSubscriptionDetail:
+    def test_detail_page(self, authenticated_client, sub_svc):
+        sub = _seed_subscription(sub_svc)
+        resp = authenticated_client.get(f"/subscriptions/{sub.id}")
+        assert resp.status_code == 200
+        assert "Netflix" in resp.text
+        assert "$15.99" in resp.text
+        assert "monthly" in resp.text
+
+    def test_detail_404(self, authenticated_client):
+        resp = authenticated_client.get("/subscriptions/nonexistent-id")
+        assert resp.status_code == 404
+        assert "Not Found" in resp.text or "not found" in resp.text.lower()
+
+    def test_cancel_redirect(self, authenticated_client, sub_svc):
+        sub = _seed_subscription(sub_svc)
+        resp = authenticated_client.post(
+            f"/subscriptions/{sub.id}/cancel",
+            follow_redirects=False,
+        )
+        assert resp.status_code == 302
+
+    def test_cancel_htmx(self, authenticated_client, sub_svc):
+        sub = _seed_subscription(sub_svc)
+        resp = authenticated_client.post(
+            f"/subscriptions/{sub.id}/cancel",
+            headers={"HX-Request": "true"},
+        )
+        assert resp.status_code == 200
+        assert "cancelled" in resp.text
+
+
+# ── Add subscription tests ───────────────────────────────────
+
+
+class TestAddSubscription:
+    def test_add_form_renders(self, authenticated_client):
+        resp = authenticated_client.get("/subscriptions/add")
+        assert resp.status_code == 200
+        assert "Add Subscription" in resp.text
+        assert "<form" in resp.text
+        assert 'name="name"' in resp.text
+
+    def test_add_submit(self, authenticated_client):
+        resp = authenticated_client.post(
+            "/subscriptions/add",
+            data={
+                "name": "Hulu",
+                "amount": "7.99",
+                "frequency": "monthly",
+                "category": "streaming",
+                "notes": "",
+            },
+            follow_redirects=False,
+        )
+        assert resp.status_code == 302
+        assert resp.headers["location"] == "/subscriptions"
+
+    def test_add_submit_shows_in_list(self, authenticated_client):
+        authenticated_client.post(
+            "/subscriptions/add",
+            data={
+                "name": "Disney Plus",
+                "amount": "13.99",
+                "frequency": "monthly",
+                "category": "streaming",
+                "notes": "",
+            },
+        )
+        resp = authenticated_client.get("/subscriptions")
+        assert resp.status_code == 200
+        assert "Disney Plus" in resp.text
+
+
+# ── Detect subscriptions tests ───────────────────────────────
+
+
+class TestDetectSubscriptions:
+    def test_detect_page_empty(self, authenticated_client):
+        resp = authenticated_client.get("/subscriptions/detect")
+        assert resp.status_code == 200
+        assert "Auto-Detected" in resp.text
+        assert "No recurring charges detected" in resp.text
+
+
+# ── Subscription HTMX partial tests ─────────────────────────
+
+
+class TestSubscriptionPartials:
+    def test_sub_search_all(self, authenticated_client, sub_svc):
+        _seed_multiple_subscriptions(sub_svc)
+        resp = authenticated_client.get("/subscriptions/partials/sub-search")
+        assert resp.status_code == 200
+        assert "Netflix" in resp.text
+        assert "Spotify" in resp.text
+        assert "<html" not in resp.text
+
+    def test_sub_search_filtered(self, authenticated_client, sub_svc):
+        _seed_multiple_subscriptions(sub_svc)
+        resp = authenticated_client.get("/subscriptions/partials/sub-search?q=Net")
+        assert resp.status_code == 200
+        assert "Netflix" in resp.text
+        assert "Spotify" not in resp.text
+
+    def test_sub_search_no_match(self, authenticated_client, sub_svc):
+        _seed_multiple_subscriptions(sub_svc)
+        resp = authenticated_client.get("/subscriptions/partials/sub-search?q=zzzzz")
+        assert resp.status_code == 200
+        assert "No subscriptions match" in resp.text
+
+    def test_sub_summary_partial(self, authenticated_client, sub_svc):
+        _seed_multiple_subscriptions(sub_svc)
+        resp = authenticated_client.get("/subscriptions/partials/sub-summary")
+        assert resp.status_code == 200
+        assert "Active" in resp.text
+        assert "<html" not in resp.text
+
+    def test_category_chart_partial(self, authenticated_client, sub_svc):
+        _seed_multiple_subscriptions(sub_svc)
+        resp = authenticated_client.get("/subscriptions/partials/category-chart")
+        assert resp.status_code == 200
+        assert "categoryChart" in resp.text
+        assert "<html" not in resp.text
+
+    def test_category_chart_partial_empty(self, authenticated_client):
+        resp = authenticated_client.get("/subscriptions/partials/category-chart")
+        assert resp.status_code == 200
+        assert "No category data" in resp.text
+
+
+# ── Subscription auth redirect tests ─────────────────────────
+
+
+class TestSubscriptionAuthRedirects:
+    def test_subscriptions_dashboard_requires_auth(self):
+        app = create_app()
+        with TestClient(app, follow_redirects=False) as c:
+            resp = c.get("/subscriptions")
+            assert resp.status_code == 302
+            assert "/auth/login" in resp.headers["location"]
+
+    def test_subscription_detail_requires_auth(self):
+        app = create_app()
+        with TestClient(app, follow_redirects=False) as c:
+            resp = c.get("/subscriptions/some-id")
+            assert resp.status_code == 302
+            assert "/auth/login" in resp.headers["location"]
+
+    def test_add_subscription_requires_auth(self):
+        app = create_app()
+        with TestClient(app, follow_redirects=False) as c:
+            resp = c.get("/subscriptions/add")
+            assert resp.status_code == 302
+            assert "/auth/login" in resp.headers["location"]
+
+    def test_detect_requires_auth(self):
+        app = create_app()
+        with TestClient(app, follow_redirects=False) as c:
+            resp = c.get("/subscriptions/detect")
+            assert resp.status_code == 302
+            assert "/auth/login" in resp.headers["location"]
+
+    def test_cancel_requires_auth(self):
+        app = create_app()
+        with TestClient(app, follow_redirects=False) as c:
+            resp = c.post("/subscriptions/some-id/cancel")
             assert resp.status_code == 302
             assert "/auth/login" in resp.headers["location"]

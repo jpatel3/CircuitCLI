@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% set active_nav = "subscriptions" %}
+
+{% block title %}Subscriptions — CircuitAI{% endblock %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<header>
+    <h1>Subscriptions</h1>
+    <p>Track recurring charges and costs.</p>
+</header>
+
+<!-- Summary Cards -->
+<div id="summary-cards" class="grid">
+    <article class="summary-card">
+        <header>Active</header>
+        <p class="big-number">{{ summary.get("total_active", 0) }}</p>
+    </article>
+    <article class="summary-card">
+        <header>Monthly Cost</header>
+        <p class="big-number">${{ "%.2f" | format(summary.get("monthly_total_cents", 0) / 100) }}</p>
+    </article>
+    <article class="summary-card">
+        <header>Yearly Cost</header>
+        <p class="big-number">${{ "%.2f" | format(summary.get("yearly_total_cents", 0) / 100) }}</p>
+    </article>
+    <article class="summary-card">
+        <header>Upcoming (7d)</header>
+        <p class="big-number {% if summary.get('upcoming_count', 0) > 0 %}warn{% endif %}">
+            {{ summary.get("upcoming_count", 0) }}
+        </p>
+    </article>
+</div>
+
+<!-- Action Buttons -->
+<div style="margin: 1rem 0; display: flex; gap: 0.5rem;">
+    <a href="/subscriptions/add" role="button" class="small">Add Subscription</a>
+    <a href="/subscriptions/detect" role="button" class="small outline secondary">Detect from Transactions</a>
+    <button hx-get="/subscriptions/partials/sub-summary"
+            hx-target="#summary-cards"
+            hx-swap="outerHTML"
+            class="small outline secondary">
+        Refresh
+    </button>
+</div>
+
+<!-- Subscription Table -->
+<section>
+    <h2>Subscriptions</h2>
+    <input type="search"
+           name="q"
+           placeholder="Search subscriptions..."
+           hx-get="/subscriptions/partials/sub-search"
+           hx-trigger="keyup changed delay:300ms"
+           hx-target="#sub-list">
+    <div id="sub-list">
+        {% if subscriptions %}
+        <figure>
+            <table role="grid">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Amount</th>
+                        <th>Frequency</th>
+                        <th>Next Charge</th>
+                        <th>Status</th>
+                        <th>Confidence</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sub in subscriptions %}
+                    <tr>
+                        <td><a href="/subscriptions/{{ sub.id }}">{{ sub.name }}</a></td>
+                        <td>${{ "%.2f" | format(sub.amount_cents / 100) }}</td>
+                        <td>{{ sub.frequency }}</td>
+                        <td>{{ sub.next_charge_date or "—" }}</td>
+                        <td><span class="badge {{ sub.status }}">{{ sub.status }}</span></td>
+                        <td><span class="badge confidence-{{ 'high' if sub.confidence >= 80 else ('medium' if sub.confidence >= 60 else 'low') }}">{{ sub.confidence }}%</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </figure>
+        {% else %}
+        <p>No subscriptions yet. <a href="/subscriptions/add">Add one manually</a> or <a href="/subscriptions/detect">detect from transactions</a>.</p>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Category Chart -->
+<section>
+    <h2>Cost by Category</h2>
+    <div id="category-chart-container">
+        {% if summary.get("by_category") %}
+        <div style="max-width: 400px; margin: 0 auto;">
+            <canvas id="categoryChart"></canvas>
+        </div>
+        <script>
+        (function() {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            const data = {{ summary.get("by_category", {}) | tojson }};
+            const labels = Object.keys(data);
+            const values = Object.values(data).map(v => v / 100);
+            const colors = ['#58a6ff', '#3fb950', '#f0883e', '#f85149', '#bc8cff', '#79c0ff', '#d2a8ff', '#56d364'];
+
+            if (window._catChart) window._catChart.destroy();
+            window._catChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderWidth: 0,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#8b949e' } },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.label}: $${ctx.parsed.toFixed(2)}/mo`,
+                            },
+                        },
+                    },
+                },
+            });
+        })();
+        </script>
+        {% else %}
+        <p>No category data to display.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

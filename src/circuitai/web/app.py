@@ -12,6 +12,7 @@ from starlette.responses import RedirectResponse
 
 from circuitai.web.auth import auth_router
 from circuitai.web.routers.health import health_router
+from circuitai.web.routers.subscriptions import subs_router
 
 _WEB_DIR = Path(__file__).parent
 _STATIC_DIR = _WEB_DIR / "static"
@@ -38,6 +39,7 @@ def create_app(encryption_key: str | None = None) -> FastAPI:
     # Routers
     app.include_router(auth_router)
     app.include_router(health_router)
+    app.include_router(subs_router)
 
     @app.get("/")
     async def root():

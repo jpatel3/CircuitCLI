@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% set active_nav = "subscriptions" %}
+
+{% block title %}Detect Subscriptions — CircuitAI{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ul>
+        <li><a href="/subscriptions">Subscriptions</a></li>
+        <li>Detect</li>
+    </ul>
+</nav>
+
+<h1>Auto-Detected Subscriptions</h1>
+<p>Recurring charges detected from the last 6 months of transactions.</p>
+
+{% if detected %}
+<figure>
+    <table role="grid">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Amount</th>
+                <th>Frequency</th>
+                <th>Confidence</th>
+                <th>Last Charge</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sub in detected %}
+            <tr>
+                <td>{{ sub.name }}</td>
+                <td>${{ "%.2f" | format(sub.amount_cents / 100) }}</td>
+                <td>{{ sub.frequency }}</td>
+                <td><span class="badge confidence-{{ 'high' if sub.confidence >= 80 else ('medium' if sub.confidence >= 60 else 'low') }}">{{ sub.confidence }}%</span></td>
+                <td>{{ sub.last_charge_date or "—" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</figure>
+
+<form method="post" action="/subscriptions/detect/confirm">
+    <div style="display: flex; gap: 0.5rem;">
+        <button type="submit">Confirm All ({{ detected | length }})</button>
+        <a href="/subscriptions" role="button" class="outline secondary">Back</a>
+    </div>
+</form>
+{% else %}
+<p>No recurring charges detected. This usually means there aren't enough transactions (need 6+ months of data).</p>
+<a href="/subscriptions" role="button" class="outline secondary">Back to Dashboard</a>
+{% endif %}
+{% endblock %}

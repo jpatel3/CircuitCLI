@@ -1,0 +1,20 @@
+<div id="summary-cards" class="grid">
+    <article class="summary-card">
+        <header>Active</header>
+        <p class="big-number">{{ summary.get("total_active", 0) }}</p>
+    </article>
+    <article class="summary-card">
+        <header>Monthly Cost</header>
+        <p class="big-number">${{ "%.2f" | format(summary.get("monthly_total_cents", 0) / 100) }}</p>
+    </article>
+    <article class="summary-card">
+        <header>Yearly Cost</header>
+        <p class="big-number">${{ "%.2f" | format(summary.get("yearly_total_cents", 0) / 100) }}</p>
+    </article>
+    <article class="summary-card">
+        <header>Upcoming (7d)</header>
+        <p class="big-number {% if summary.get('upcoming_count', 0) > 0 %}warn{% endif %}">
+            {{ summary.get("upcoming_count", 0) }}
+        </p>
+    </article>
+</div>

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% set active_nav = "subscriptions" %}
+
+{% block title %}Not Found — CircuitAI{% endblock %}
+
+{% block content %}
+<h1>Not Found</h1>
+<p>{{ message | default("The requested subscription could not be found.") }}</p>
+<a href="/subscriptions" role="button" class="outline">Back to Subscriptions</a>
+{% endblock %}

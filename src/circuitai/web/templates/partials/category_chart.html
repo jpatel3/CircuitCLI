@@ -1,0 +1,40 @@
+{% if summary.get("by_category") %}
+<div style="max-width: 400px; margin: 0 auto;">
+    <canvas id="categoryChart"></canvas>
+</div>
+<script>
+(function() {
+    const ctx = document.getElementById('categoryChart').getContext('2d');
+    const data = {{ summary.get("by_category", {}) | tojson }};
+    const labels = Object.keys(data);
+    const values = Object.values(data).map(v => v / 100);
+    const colors = ['#58a6ff', '#3fb950', '#f0883e', '#f85149', '#bc8cff', '#79c0ff', '#d2a8ff', '#56d364'];
+
+    if (window._catChart) window._catChart.destroy();
+    window._catChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+            datasets: [{
+                data: values,
+                backgroundColor: colors.slice(0, labels.length),
+                borderWidth: 0,
+            }],
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#8b949e' } },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => `${ctx.label}: $${ctx.parsed.toFixed(2)}/mo`,
+                    },
+                },
+            },
+        },
+    });
+})();
+</script>
+{% else %}
+<p>No category data to display.</p>
+{% endif %}
