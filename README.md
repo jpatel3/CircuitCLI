@@ -25,14 +25,18 @@ circuit --help
 ## Features
 
 - **Interactive REPL** — type naturally or use `/commands` with tab completion and history
+- **Web Dashboard** — browser-based UI with `circuit serve` (Health, Subscriptions, more coming)
 - **Morning Catchup** — `circuit morning` for a daily financial briefing
 - **Bill Tracking** — recurring bills with payment history, due-date alerts, and auto-matching
+- **Subscription Tracking** — auto-detect recurring charges from transactions, manage manually, cost breakdowns by category
+- **Health Dashboard** — lab results, flagged markers, marker trends over time
 - **Bank Accounts** — balance tracking, transaction import, and statement linking
 - **Credit Cards** — balance, limit, utilization tracking
 - **Mortgage** — amortization schedule, payments, and equity tracking
 - **Investments** — brokerage, 401(k), 529, IRA portfolio tracking
 - **Deadlines** — priority-based deadline management with calendar sync
 - **Kids Activities** — per-child, per-sport cost and schedule tracking
+- **Browser Automation** — `circuit browse` for syncing data from utility portals (JCPL, etc.)
 - **Natural Language Input** — `circuit add "paid electric bill $142"` parses and records
 - **Natural Language Queries** — `circuit query "what bills are due this week?"`, `"show my account balances"`, `"what's my net worth?"`
 - **Textual Dashboard** — full TUI with `circuit dashboard`
@@ -59,6 +63,10 @@ circuit --help
 | `circuit activities` | Kids activities (list, add, show, log-cost) |
 | `circuit add <text>` | Parse natural language into a structured entry |
 | `circuit query <text>` | Ask questions about your finances |
+| `circuit subscriptions` | Subscription tracking (list, add, detect, show, cancel, summary) |
+| `circuit health` | Health tracking (import-lab, results, markers, trends) |
+| `circuit serve` | Launch the web dashboard (browser UI) |
+| `circuit browse` | Browser automation for utility portals (setup, sync, status) |
 | `circuit dashboard` | Launch the Textual TUI dashboard |
 | `circuit calendar` | CalDAV calendar sync (setup, sync, status) |
 | `circuit adapters` | Manage data adapters (list, info, configure, sync) |
@@ -112,6 +120,37 @@ The dashboard displays 7 panels: financial summary, bills, accounts, cards, dead
 | `q` / `Escape` | Quit |
 | `r` | Refresh |
 | `Tab` / `Shift+Tab` | Navigate between panels |
+
+## Web Dashboard
+
+Launch the browser-based dashboard:
+
+```bash
+circuit serve              # starts at http://localhost:8000
+circuit serve --port 9000  # custom port
+```
+
+Login with your master password. The web UI provides:
+
+- **Health Dashboard** — lab results, flagged markers with dates, marker trend charts, search
+- **Subscriptions Dashboard** — active count, monthly/yearly cost cards, subscription table, category doughnut chart, add/detect/cancel flows
+
+All pages support HTMX live search and partial refresh without full page reloads.
+
+### CLI + Web Parity
+
+The CLI and web dashboard share the same service layer and database. Any data added via one interface is immediately visible in the other.
+
+| Action | CLI | Web |
+|--------|-----|-----|
+| List subscriptions | `circuit subscriptions list` | `/subscriptions` |
+| Add subscription | `circuit subscriptions add` | `/subscriptions/add` |
+| Detect from transactions | `circuit subscriptions detect` | `/subscriptions/detect` |
+| Subscription detail | `circuit subscriptions show` | `/subscriptions/{id}` |
+| Cancel subscription | `circuit subscriptions cancel` | Detail page button |
+| Cost summary | `circuit subscriptions summary` | Dashboard summary cards |
+| View lab results | `circuit health results` | `/health` |
+| Marker trends | `circuit health trends` | `/health/trends/{marker}` |
 
 ## Morning Catchup
 
@@ -230,9 +269,11 @@ Without SQLCipher installed, CircuitAI falls back to plain SQLite (still local-o
 - **Click** — CLI framework with nested command groups
 - **Rich** — tables, panels, and styled terminal output
 - **Textual** — full TUI dashboard
+- **FastAPI + Jinja2 + HTMX** — web dashboard with Pico CSS
 - **Pydantic** — data validation and serialization
 - **prompt_toolkit** — REPL with history and completion
 - **SQLite / SQLCipher** — local encrypted storage
+- **Playwright** — optional browser automation for utility portals
 - **CalDAV** — optional calendar sync
 
 ## Testing & CI
@@ -242,7 +283,7 @@ python -m pytest               # run all tests
 python -m pytest -x            # stop on first failure
 ```
 
-102 tests across 10 test files covering CLI commands, services, repositories, and adapters. GitHub Actions CI runs on Python 3.11 and 3.12 with Ruff linting, pytest, and build verification.
+428 tests across 18 test files covering CLI commands, services, repositories, web dashboard, browser automation, and adapters. GitHub Actions CI runs on Python 3.11 and 3.12 with Ruff linting, pytest, and build verification.
 
 ## Contributing
 
